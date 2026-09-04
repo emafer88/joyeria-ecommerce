@@ -1,0 +1,7 @@
+/* Reset base. El resto de los estilos vive en styled-components
+   (src/styles/GlobalStyles.ts) para seguir el mismo patrón que el POS. */
+html,
+body,
+#root {
+  height: 100%;
+}
