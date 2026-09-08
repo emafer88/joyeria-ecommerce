@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   MostrarCategorias,
   MostrarImagenesProducto,
+  MostrarImagenesVariante,
   MostrarPiezasDisponibles,
   MostrarProductoDetalle,
   MostrarProductos,
@@ -16,6 +17,7 @@ export const K_CATEGORIAS = "ecommerce categorias";
 export const K_PRODUCTOS = "ecommerce productos";
 export const K_PRODUCTO_DETALLE = "ecommerce producto detalle";
 export const K_IMAGENES_PRODUCTO = "ecommerce imagenes producto";
+export const K_IMAGENES_VARIANTE = "ecommerce imagenes variante";
 export const K_VARIANTES = "ecommerce variantes disponibles";
 export const K_PIEZAS_VARIANTE = "ecommerce piezas disponibles";
 
@@ -45,6 +47,13 @@ export const useImagenesProductoQuery = (idProducto: number | undefined) =>
     queryKey: [K_IMAGENES_PRODUCTO, idProducto],
     queryFn: () => MostrarImagenesProducto(idProducto as number),
     enabled: idProducto !== undefined,
+  });
+
+export const useImagenesVarianteQuery = (idVariante: number | undefined) =>
+  useQuery({
+    queryKey: [K_IMAGENES_VARIANTE, idVariante],
+    queryFn: () => MostrarImagenesVariante(idVariante as number),
+    enabled: idVariante !== undefined,
   });
 
 export const useVariantesDisponiblesQuery = (idProducto: number | undefined) =>

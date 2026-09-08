@@ -1790,6 +1790,14 @@ export type Database = {
           url: string
         }[]
       }
+      ecommerce_imagenes_variante: {
+        Args: { _id_variante: number }
+        Returns: {
+          id: number
+          orden: number
+          url: string
+        }[]
+      }
       ecommerce_listar_categorias: {
         Args: never
         Returns: {

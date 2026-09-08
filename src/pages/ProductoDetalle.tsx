@@ -4,6 +4,7 @@ import { useParams, Link } from "react-router-dom";
 import { toast } from "sonner";
 import {
   useImagenesProductoQuery,
+  useImagenesVarianteQuery,
   usePiezasDisponiblesQuery,
   useProductoDetalleQuery,
   useVariantesDisponiblesQuery,
@@ -21,6 +22,8 @@ export function ProductoDetalle() {
   const { data: producto, isLoading, isError } =
     useProductoDetalleQuery(idProducto);
   const { data: imagenes } = useImagenesProductoQuery(idProducto);
+  const { data: imagenesVariante } =
+    useImagenesVarianteQuery(idVarianteElegida);
   const { data: variantes } = useVariantesDisponiblesQuery(
     producto?.esJoyeria ? idProducto : undefined
   );
@@ -34,7 +37,11 @@ export function ProductoDetalle() {
   const varianteElegida = variantes?.find(
     (v) => v.idVariante === idVarianteElegida
   );
-  const imagenPortada = imagenes?.[0]?.url ?? null;
+  // Al elegir un material, la galería pasa a ser la de esa variante; si la
+  // variante no tiene imágenes cargadas se cae a las del producto.
+  const galeria =
+    imagenesVariante && imagenesVariante.length > 0 ? imagenesVariante : imagenes;
+  const imagenPortada = galeria?.[0]?.url ?? null;
 
   if (isLoading) return <Container>Cargando...</Container>;
   if (isError || !producto)
@@ -53,8 +60,8 @@ export function ProductoDetalle() {
 
       <div className="layout">
         <div className="galeria">
-          {imagenes && imagenes.length > 0 ? (
-            imagenes.map((img) => (
+          {galeria && galeria.length > 0 ? (
+            galeria.map((img) => (
               <img key={img.id} src={img.url} alt={producto.nombre} />
             ))
           ) : (

@@ -84,6 +84,16 @@ export async function MostrarImagenesProducto(
   return (data ?? []).map((i) => ({ id: i.id, url: i.url, orden: i.orden }));
 }
 
+export async function MostrarImagenesVariante(
+  idVariante: number
+): Promise<ImagenProducto[]> {
+  const { data, error } = await supabase.rpc("ecommerce_imagenes_variante", {
+    _id_variante: idVariante,
+  });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((i) => ({ id: i.id, url: i.url, orden: i.orden }));
+}
+
 export async function MostrarVariantesDisponibles(
   idProducto: number
 ): Promise<VarianteDisponible[]> {
