@@ -1830,6 +1830,17 @@ export type Database = {
           total_disponible: number
         }[]
       }
+      ecommerce_mis_pedidos: {
+        Args: never
+        Returns: {
+          cantidad_productos: number
+          estado: string
+          fecha: string
+          id_orden_externa: string
+          monto_total: number
+          nro_comprobante: string
+        }[]
+      }
       ecommerce_piezas_disponibles: {
         Args: { _id_variante: number }
         Returns: {
@@ -1861,6 +1872,15 @@ export type Database = {
           precio_venta_sugerido: number
           pureza: string
         }[]
+      }
+      ecommerce_vincular_cliente: {
+        Args: {
+          _user_id: string
+          _email?: string
+          _nombre?: string
+          _telefono?: string
+        }
+        Returns: number
       }
       editarcantidaddv: {
         Args: { _cantidad: number; _id: number }

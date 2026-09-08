@@ -5,6 +5,9 @@ import { Carrito } from "../pages/Carrito";
 import { Checkout } from "../pages/Checkout";
 import { PagoResultado } from "../pages/PagoResultado";
 import { EstadoPedidoPagina } from "../pages/EstadoPedidoPagina";
+import { Acceso } from "../pages/Acceso";
+import { MisPedidos } from "../pages/MisPedidos";
+import { RutaProtegida } from "../components/organismos/RutaProtegida";
 
 export function AppRouter() {
   return (
@@ -17,6 +20,15 @@ export function AppRouter() {
       <Route path="/pago/fallo" element={<PagoResultado tipo="fallo" />} />
       <Route path="/pago/pendiente" element={<PagoResultado tipo="pendiente" />} />
       <Route path="/pedido/:idOrdenExterna" element={<EstadoPedidoPagina />} />
+      <Route path="/acceso" element={<Acceso />} />
+      <Route
+        path="/mis-pedidos"
+        element={
+          <RutaProtegida>
+            <MisPedidos />
+          </RutaProtegida>
+        }
+      />
     </Routes>
   );
 }

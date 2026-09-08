@@ -2,7 +2,7 @@
 // mande el navegador), reserva las piezas de joyería, guarda las líneas de
 // producto por cantidad, y crea la preferencia de pago en Mercado Pago.
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
-import { corsHeaders, json, respuestaCors } from "../_shared/cors.ts";
+import { json, respuestaCors } from "../_shared/cors.ts";
 import {
   CANAL,
   ID_ALMACEN,
@@ -68,6 +68,33 @@ Deno.serve(async (req) => {
 
   const items = body.items ?? [];
   if (items.length === 0) return json({ error: "el carrito está vacío" }, 400);
+
+  // --- 0) Usuario logueado (opcional): el checkout sigue soportando compra
+  //     anónima. Si hay sesión, se vincula/crea el cliente del POS y su
+  //     id se clava en la venta (crear_venta_externa_piezas hace UPDATE
+  //     sobre esta misma fila, así que el id_cliente sobrevive). Un fallo
+  //     al vincular NO frena el checkout: se loguea y se sigue como anónimo.
+  let idCliente: number | null = null;
+  const jwt = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+  if (jwt) {
+    const { data: { user } } = await supabaseAdmin.auth.getUser(jwt);
+    if (user) {
+      const { data: idClienteVinculado, error: errorVinculo } =
+        await supabaseAdmin.rpc("ecommerce_vincular_cliente", {
+          _user_id: user.id,
+          _email: user.email ?? undefined,
+          _nombre:
+            (user.user_metadata?.full_name as string | undefined) ??
+            (user.user_metadata?.name as string | undefined) ??
+            undefined,
+        });
+      if (errorVinculo) {
+        console.error("Error vinculando cliente de ecommerce:", errorVinculo.message);
+      } else {
+        idCliente = idClienteVinculado as number;
+      }
+    }
+  }
 
   // --- 1) Revalidar cada línea contra la base real (nunca el precio del cliente) ---
   const lineas: LineaValidada[] = [];
@@ -139,7 +166,7 @@ Deno.serve(async (req) => {
       fecha: new Date().toISOString(),
       id_sucursal: ID_SUCURSAL,
       id_empresa: ID_EMPRESA,
-      id_cliente: null,
+      id_cliente: idCliente,
       monto_total: montoTotal,
       sub_total: montoTotal,
       total_impuestos: 0,

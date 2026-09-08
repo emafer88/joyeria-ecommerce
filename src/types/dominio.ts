@@ -107,3 +107,18 @@ export type CarritoItem = CarritoItemPieza | CarritoItemStock;
 export function claveCarritoItem(item: CarritoItem): string {
   return item.tipo === "pieza" ? `pieza:${item.idPieza}` : `stock:${item.idProducto}`;
 }
+
+// ----------------------------------------------------------------------------
+// Cuenta del comprador (Supabase Auth). Fila aplanada de `ecommerce_mis_pedidos`.
+// El detalle de cada pedido sigue saliendo de la Edge Function estado-pedido
+// (ver EstadoPedido en supabaseCrud/crudCheckout.ts).
+// ----------------------------------------------------------------------------
+
+export interface PedidoResumen {
+  idOrdenExterna: string;
+  fecha: string;
+  estado: string;
+  montoTotal: number;
+  nroComprobante: string | null;
+  cantidadProductos: number;
+}
