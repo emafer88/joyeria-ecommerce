@@ -1,18 +1,28 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import {
-  Autocomplete,
-  GoogleMap,
-  MarkerF,
-  useJsApiLoader,
-} from "@react-google-maps/api";
+  MapContainer,
+  Marker,
+  TileLayer,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
+import iconUrl from "leaflet/dist/images/marker-icon.png";
+import shadowUrl from "leaflet/dist/images/marker-shadow.png";
 import { v } from "../../styles/variables";
 
-// `libraries` tiene que ser una referencia estable o el loader se queja y
-// recarga el script en cada render.
-const LIBRERIAS: "places"[] = ["places"];
-const CENTRO_MX = { lat: 23.6345, lng: -102.5528 };
-const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+// Los iconos de Leaflet se rompen con los bundlers (rutas relativas al CSS).
+// Se re-apuntan a los assets que Vite resuelve como URL.
+L.Icon.Default.mergeOptions({ iconRetinaUrl, iconUrl, shadowUrl });
+
+const API_KEY = import.meta.env.VITE_MAPTILER_API_KEY;
+const CENTRO_MX: [number, number] = [23.6345, -102.5528];
+const TILES = `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${API_KEY}`;
+const ATRIBUCION =
+  '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
 interface Props {
   lat: number | null;
@@ -22,6 +32,35 @@ interface Props {
   onCambio: (lat: number, lng: number) => void;
 }
 
+interface Sugerencia {
+  nombre: string;
+  lat: number;
+  lng: number;
+}
+
+interface FeatureMapTiler {
+  place_name?: string;
+  text?: string;
+  center: [number, number];
+}
+
+async function geocodificar(
+  texto: string,
+  signal?: AbortSignal
+): Promise<Sugerencia[]> {
+  const url = `https://api.maptiler.com/geocoding/${encodeURIComponent(
+    texto
+  )}.json?key=${API_KEY}&country=mx&language=es&autocomplete=true&limit=5`;
+  const res = await fetch(url, { signal });
+  if (!res.ok) return [];
+  const data = (await res.json()) as { features?: FeatureMapTiler[] };
+  return (data.features ?? []).map((f) => ({
+    nombre: f.place_name ?? f.text ?? "",
+    lat: f.center[1],
+    lng: f.center[0],
+  }));
+}
+
 /** Sin API key no hay mapa: el form sigue andando sin lat/lng. */
 export function MapaUbicacion(props: Props) {
   if (!API_KEY) return null;
@@ -29,94 +68,110 @@ export function MapaUbicacion(props: Props) {
 }
 
 function MapaInterno({ lat, lng, direccionTexto, onCambio }: Props) {
-  const { isLoaded } = useJsApiLoader({
-    id: "gmaps-script",
-    googleMapsApiKey: API_KEY as string,
-    libraries: LIBRERIAS,
-  });
-
-  const [mapa, setMapa] = useState<google.maps.Map | null>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-  const ultimoGeocode = useRef("");
+  const [busqueda, setBusqueda] = useState("");
+  const [sugerencias, setSugerencias] = useState<Sugerencia[]>([]);
+  const [abierto, setAbierto] = useState(false);
+  const ultimoAuto = useRef("");
 
   const tienePin = lat != null && lng != null;
-  const centro = useMemo(
-    () => (tienePin ? { lat: lat as number, lng: lng as number } : CENTRO_MX),
+  const centro = useMemo<[number, number]>(
+    () => (tienePin ? [lat as number, lng as number] : CENTRO_MX),
     [tienePin, lat, lng]
   );
 
-  // Mientras no haya pin, geocodificamos la dirección tipeada (con debounce)
-  // para plantar el primer punto. Al setear lat/lng el efecto se apaga solo.
+  // Autocomplete del buscador (debounce + cancelación). Con < 3 caracteres
+  // no buscamos; el dropdown se oculta por `mostrarSugerencias`, sin limpiar
+  // estado dentro del efecto.
+  const consulta = busqueda.trim();
   useEffect(() => {
-    if (!isLoaded || tienePin) return;
-    const texto = direccionTexto.trim();
-    if (texto.length < 10 || texto === ultimoGeocode.current) return;
+    if (consulta.length < 3) return;
+    const ctrl = new AbortController();
     const t = setTimeout(() => {
-      ultimoGeocode.current = texto;
-      new google.maps.Geocoder().geocode(
-        { address: `${texto}, México` },
-        (res, status) => {
-          if (status === "OK" && res && res[0]) {
-            const loc = res[0].geometry.location;
-            onCambio(loc.lat(), loc.lng());
-          }
-        }
-      );
-    }, 800);
+      geocodificar(consulta, ctrl.signal)
+        .then(setSugerencias)
+        .catch(() => {});
+    }, 350);
+    return () => {
+      clearTimeout(t);
+      ctrl.abort();
+    };
+  }, [consulta]);
+
+  const mostrarSugerencias =
+    abierto && consulta.length >= 3 && sugerencias.length > 0;
+
+  // Mientras no haya pin, geocodificamos la dirección tipeada en el form.
+  useEffect(() => {
+    if (tienePin) return;
+    const texto = direccionTexto.trim();
+    if (texto.length < 10 || texto === ultimoAuto.current) return;
+    const t = setTimeout(() => {
+      ultimoAuto.current = texto;
+      geocodificar(`${texto}, México`)
+        .then((r) => {
+          if (r[0]) onCambio(r[0].lat, r[0].lng);
+        })
+        .catch(() => {});
+    }, 900);
     return () => clearTimeout(t);
-  }, [isLoaded, tienePin, direccionTexto, onCambio]);
+  }, [tienePin, direccionTexto, onCambio]);
 
-  const usarLugar = () => {
-    const loc = autocompleteRef.current?.getPlace()?.geometry?.location;
-    if (loc) {
-      onCambio(loc.lat(), loc.lng());
-      mapa?.panTo(loc);
-      mapa?.setZoom(16);
-    }
+  const elegir = (s: Sugerencia) => {
+    setBusqueda(s.nombre);
+    setSugerencias([]);
+    setAbierto(false);
+    onCambio(s.lat, s.lng);
   };
-
-  if (!isLoaded) {
-    return (
-      <Caja>
-        <div className="cargando">Cargando mapa…</div>
-      </Caja>
-    );
-  }
 
   return (
     <Caja>
-      <Autocomplete
-        onLoad={(a) => (autocompleteRef.current = a)}
-        onPlaceChanged={usarLugar}
-        options={{ componentRestrictions: { country: "mx" } }}
-      >
-        <input className="buscar" placeholder="Buscar dirección en el mapa…" />
-      </Autocomplete>
+      <div className="buscador">
+        <input
+          className="buscar"
+          placeholder="Buscar dirección en el mapa…"
+          value={busqueda}
+          onChange={(e) => {
+            setBusqueda(e.target.value);
+            setAbierto(true);
+          }}
+          onFocus={() => setAbierto(true)}
+          onBlur={() => setTimeout(() => setAbierto(false), 150)}
+        />
+        {mostrarSugerencias && (
+          <ul className="sugerencias">
+            {sugerencias.map((s, i) => (
+              <li key={i}>
+                <button type="button" onMouseDown={() => elegir(s)}>
+                  {s.nombre}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
-      <GoogleMap
-        mapContainerClassName="mapa"
+      <MapContainer
+        className="mapa"
         center={centro}
         zoom={tienePin ? 16 : 5}
-        onLoad={setMapa}
-        onClick={(e) =>
-          e.latLng && onCambio(e.latLng.lat(), e.latLng.lng())
-        }
-        options={{
-          streetViewControl: false,
-          mapTypeControl: false,
-          fullscreenControl: false,
-        }}
+        scrollWheelZoom
       >
+        <TileLayer url={TILES} attribution={ATRIBUCION} />
+        <Sincronizar centro={centro} zoom={tienePin ? 16 : 5} />
+        <ClicMapa onClic={onCambio} />
         {tienePin && (
-          <MarkerF
-            position={{ lat: lat as number, lng: lng as number }}
+          <Marker
+            position={[lat as number, lng as number]}
             draggable
-            onDragEnd={(e) =>
-              e.latLng && onCambio(e.latLng.lat(), e.latLng.lng())
-            }
+            eventHandlers={{
+              dragend: (e) => {
+                const p = e.target.getLatLng();
+                onCambio(p.lat, p.lng);
+              },
+            }}
           />
         )}
-      </GoogleMap>
+      </MapContainer>
 
       <span className="ayuda">
         {tienePin
@@ -127,10 +182,40 @@ function MapaInterno({ lat, lng, direccionTexto, onCambio }: Props) {
   );
 }
 
+function Sincronizar({
+  centro,
+  zoom,
+}: {
+  centro: [number, number];
+  zoom: number;
+}) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(centro, zoom);
+  }, [map, centro, zoom]);
+  // El contenedor puede montarse oculto (form colapsado): forzamos el recálculo.
+  useEffect(() => {
+    const t = setTimeout(() => map.invalidateSize(), 0);
+    return () => clearTimeout(t);
+  }, [map]);
+  return null;
+}
+
+function ClicMapa({ onClic }: { onClic: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click: (e) => onClic(e.latlng.lat, e.latlng.lng),
+  });
+  return null;
+}
+
 const Caja = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
+
+  .buscador {
+    position: relative;
+  }
 
   .buscar {
     width: 100%;
@@ -150,6 +235,38 @@ const Caja = styled.div`
     }
   }
 
+  .sugerencias {
+    position: absolute;
+    z-index: 500;
+    left: 0;
+    right: 0;
+    top: calc(100% + 4px);
+    list-style: none;
+    margin: 0;
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid ${v.borderSutil};
+    background: #14121c;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+
+    button {
+      width: 100%;
+      text-align: left;
+      padding: 8px 10px;
+      border: none;
+      background: none;
+      color: ${v.colorTextoSuave};
+      font-size: 12.5px;
+      font-family: inherit;
+      cursor: pointer;
+      border-radius: 6px;
+      &:hover {
+        background: ${v.bgTarjetaHover};
+        color: ${v.colorPrincipal};
+      }
+    }
+  }
+
   .mapa {
     width: 100%;
     height: 240px;
@@ -157,16 +274,18 @@ const Caja = styled.div`
     border: 1px solid ${v.borderSutil};
   }
 
-  .cargando {
-    height: 240px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: ${v.borderRadius};
-    border: 1px solid ${v.borderSutil};
+  /* Leaflet pinta los controles y la atribución con su propio CSS; solo
+     ajustamos el color del texto de atribución para que no cante en oscuro. */
+  .leaflet-container {
     background: ${v.bgTarjeta};
+    font-family: inherit;
+  }
+  .leaflet-control-attribution {
+    background: rgba(0, 0, 0, 0.6);
     color: ${v.colorTextoSuave2};
-    font-size: 13px;
+    a {
+      color: ${v.colorTextoSuave};
+    }
   }
 
   .ayuda {
