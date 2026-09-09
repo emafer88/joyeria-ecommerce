@@ -164,6 +164,7 @@ function MapaInterno({ lat, lng, direccionTexto, onCambio }: Props) {
 
       <MapContainer
         className="mapa"
+        style={{ height: 240 }}
         center={centro}
         zoom={tienePin ? 16 : 5}
         scrollWheelZoom
@@ -203,14 +204,25 @@ function Sincronizar({
   zoom: number;
 }) {
   const map = useMap();
+
   useEffect(() => {
     map.setView(centro, zoom);
   }, [map, centro, zoom]);
-  // El contenedor puede montarse oculto (form colapsado): forzamos el recálculo.
+
+  // El contenedor puede montarse con tamaño 0 (form colapsado, o doble
+  // montaje de StrictMode): Leaflet queda gris y no pide los tiles.
+  // Forzamos varios recálculos y observamos el resize del contenedor.
   useEffect(() => {
-    const t = setTimeout(() => map.invalidateSize(), 0);
-    return () => clearTimeout(t);
+    const recalcular = () => map.invalidateSize();
+    const timers = [0, 150, 400, 800].map((ms) => setTimeout(recalcular, ms));
+    const ro = new ResizeObserver(recalcular);
+    ro.observe(map.getContainer());
+    return () => {
+      timers.forEach(clearTimeout);
+      ro.disconnect();
+    };
   }, [map]);
+
   return null;
 }
 
