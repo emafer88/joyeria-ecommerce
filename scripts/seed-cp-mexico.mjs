@@ -7,11 +7,12 @@
 //   codificado en Latin-1, con una línea de preámbulo antes del header real.
 //
 // Uso:
-//   SUPABASE_URL=https://<ref>.supabase.co \
-//   SUPABASE_SERVICE_ROLE_KEY=<service_role_key> \
 //   node scripts/seed-cp-mexico.mjs ./CPdescarga.txt
 //
-// Si no pasás SUPABASE_URL, se intenta leer VITE_APP_SUPABASE_URL de .env.
+// La URL y la service_role key se leen de variables de entorno o, si no
+// están, de .env (SUPABASE_URL / VITE_APP_SUPABASE_URL y
+// SUPABASE_SERVICE_ROLE_KEY). La service_role va en .env sin prefijo VITE_,
+// así que Vite NO la expone al frontend, y .env está en .gitignore.
 // Idempotente: hace upsert ignorando duplicados por (cp, colonia).
 
 import { readFileSync } from "node:fs";
@@ -34,8 +35,13 @@ function leerEnv(clave) {
   }
 }
 
-const SUPABASE_URL = process.env.SUPABASE_URL ?? leerEnv("VITE_APP_SUPABASE_URL");
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL =
+  process.env.SUPABASE_URL ??
+  leerEnv("SUPABASE_URL") ??
+  leerEnv("VITE_APP_SUPABASE_URL");
+const SERVICE_ROLE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ??
+  leerEnv("SUPABASE_SERVICE_ROLE_KEY");
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
   console.error("Faltan SUPABASE_URL y/o SUPABASE_SERVICE_ROLE_KEY.");

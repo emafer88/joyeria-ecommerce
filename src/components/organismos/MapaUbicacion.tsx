@@ -14,9 +14,21 @@ import iconUrl from "leaflet/dist/images/marker-icon.png";
 import shadowUrl from "leaflet/dist/images/marker-shadow.png";
 import { v } from "../../styles/variables";
 
-// Los iconos de Leaflet se rompen con los bundlers (rutas relativas al CSS).
-// Se re-apuntan a los assets que Vite resuelve como URL.
-L.Icon.Default.mergeOptions({ iconRetinaUrl, iconUrl, shadowUrl });
+// Leaflet arma la URL del icono a partir del CSS (ruta relativa que el bundler
+// rompe). En vez de parchear L.Icon.Default, se crea un icono explícito con
+// los assets que Vite resuelve como URL y se pasa a cada <Marker>.
+const asUrl = (m: string | { default: string }) =>
+  typeof m === "string" ? m : m.default;
+
+const ICONO_PIN = L.icon({
+  iconRetinaUrl: asUrl(iconRetinaUrl),
+  iconUrl: asUrl(iconUrl),
+  shadowUrl: asUrl(shadowUrl),
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
 
 const API_KEY = import.meta.env.VITE_MAPTILER_API_KEY;
 const CENTRO_MX: [number, number] = [23.6345, -102.5528];
@@ -162,6 +174,7 @@ function MapaInterno({ lat, lng, direccionTexto, onCambio }: Props) {
         {tienePin && (
           <Marker
             position={[lat as number, lng as number]}
+            icon={ICONO_PIN}
             draggable
             eventHandlers={{
               dragend: (e) => {
