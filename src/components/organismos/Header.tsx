@@ -1,3 +1,4 @@
+import { useState } from "react";
 import styled from "styled-components";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -12,8 +13,10 @@ export function Header() {
   const user = useAuthStore((s) => s.user);
   const cargando = useAuthStore((s) => s.cargando);
   const navigate = useNavigate();
+  const [menuAbierto, setMenuAbierto] = useState(false);
 
   const salir = async () => {
+    setMenuAbierto(false);
     try {
       await CerrarSesion();
       navigate("/");
@@ -35,12 +38,35 @@ export function Header() {
         {!cargando &&
           (user ? (
             <div className="cuenta">
-              <Link className="mis-pedidos" to="/mis-pedidos">
-                {nombreVisible(user)}
-              </Link>
-              <button type="button" className="salir" onClick={salir}>
-                Salir
+              <button
+                type="button"
+                className="disparador"
+                onClick={() => setMenuAbierto((a) => !a)}
+              >
+                {nombreVisible(user)} ▾
               </button>
+              {menuAbierto && (
+                <>
+                  <div
+                    className="backdrop"
+                    onClick={() => setMenuAbierto(false)}
+                  />
+                  <div className="menu">
+                    <Link to="/mis-pedidos" onClick={() => setMenuAbierto(false)}>
+                      Mis pedidos
+                    </Link>
+                    <Link
+                      to="/mis-direcciones"
+                      onClick={() => setMenuAbierto(false)}
+                    >
+                      Mis direcciones
+                    </Link>
+                    <button type="button" onClick={salir}>
+                      Salir
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <Link className="ingresar" to="/acceso">
@@ -107,15 +133,17 @@ const Container = styled.header`
   }
 
   .cuenta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    position: relative;
   }
 
-  .mis-pedidos {
-    font-size: 13px;
+  .disparador {
+    background: none;
+    border: none;
     color: ${v.colorTextoSuave};
-    max-width: 160px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    max-width: 180px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -125,17 +153,42 @@ const Container = styled.header`
     }
   }
 
-  .salir {
-    background: none;
-    border: none;
-    color: ${v.colorTextoSuave2};
-    font-size: 13px;
-    font-family: inherit;
-    cursor: pointer;
-    padding: 4px;
-    transition: 0.2s;
-    &:hover {
-      color: ${v.colorTexto};
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+  }
+
+  .menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    z-index: 21;
+    min-width: 170px;
+    display: flex;
+    flex-direction: column;
+    padding: 6px;
+    border-radius: 12px;
+    border: 1px solid ${v.borderSutil};
+    background: #14121c;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+
+    a,
+    button {
+      text-align: left;
+      padding: 9px 12px;
+      border-radius: 8px;
+      background: none;
+      border: none;
+      color: ${v.colorTextoSuave};
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: 0.15s;
+      &:hover {
+        background: ${v.bgTarjetaHover};
+        color: ${v.colorPrincipal};
+      }
     }
   }
 

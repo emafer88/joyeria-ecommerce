@@ -2,12 +2,32 @@
 // crudCatalogo.ts, esto NO son RPCs de Postgres: son funciones Deno que
 // hablan con Mercado Pago y usan la service_role key server-side.
 import { supabase } from "./supabase.config";
-import type { CarritoItem } from "../types/dominio";
+import type { CarritoItem, EnvioSnapshot } from "../types/dominio";
 
 export interface ResultadoPreferencia {
   idOrdenExterna: string;
   initPoint: string;
 }
+
+/** Dirección para el checkout: id de una guardada, o los campos inline
+ *  (guest / "otra dirección"). Coincide con lo que valida la Edge Function. */
+export type EnvioCheckout =
+  | { idDireccion: number }
+  | {
+      destinatario: string;
+      telefono: string;
+      cp: string;
+      estado: string;
+      municipio: string;
+      colonia: string;
+      calle: string;
+      numeroExterior: string;
+      numeroInterior: string | null;
+      entreCalles: string | null;
+      referencias: string | null;
+      lat: number | null;
+      lng: number | null;
+    };
 
 export interface ItemPedido {
   nombre: string;
@@ -21,6 +41,7 @@ export interface EstadoPedido {
   nroComprobante: string | null;
   montoTotal: number;
   items: ItemPedido[];
+  envio: EnvioSnapshot | null;
 }
 
 function itemsParaEdgeFunction(items: CarritoItem[]) {
@@ -52,11 +73,12 @@ async function mensajeErrorEdgeFunction(error: unknown): Promise<string> {
 }
 
 export async function CrearPreferenciaPago(
-  items: CarritoItem[]
+  items: CarritoItem[],
+  envio: EnvioCheckout
 ): Promise<ResultadoPreferencia> {
   const { data, error } = await supabase.functions.invoke(
     "crear-preferencia-pago",
-    { body: { items: itemsParaEdgeFunction(items) } }
+    { body: { items: itemsParaEdgeFunction(items), envio } }
   );
   if (error) throw new Error(await mensajeErrorEdgeFunction(error));
   return data as ResultadoPreferencia;

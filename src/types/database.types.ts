@@ -269,6 +269,39 @@ export type Database = {
           },
         ]
       }
+      cp_mexico: {
+        Row: {
+          ciudad: string | null
+          colonia: string
+          cp: string
+          estado: string
+          id: number
+          municipio: string
+          tipo_asentamiento: string | null
+          zona: string | null
+        }
+        Insert: {
+          ciudad?: string | null
+          colonia: string
+          cp: string
+          estado: string
+          id?: never
+          municipio: string
+          tipo_asentamiento?: string | null
+          zona?: string | null
+        }
+        Update: {
+          ciudad?: string | null
+          colonia?: string
+          cp?: string
+          estado?: string
+          id?: never
+          municipio?: string
+          tipo_asentamiento?: string | null
+          zona?: string | null
+        }
+        Relationships: []
+      }
       detalle_venta: {
         Row: {
           cantidad: number | null
@@ -342,6 +375,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ecommerce_direccion: {
+        Row: {
+          calle: string
+          colonia: string
+          cp: string
+          created_at: string
+          destinatario: string
+          entre_calles: string | null
+          es_predeterminada: boolean
+          estado: string
+          etiqueta: string | null
+          id: number
+          lat: number | null
+          lng: number | null
+          municipio: string
+          numero_exterior: string
+          numero_interior: string | null
+          referencias: string | null
+          telefono: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calle: string
+          colonia: string
+          cp: string
+          created_at?: string
+          destinatario: string
+          entre_calles?: string | null
+          es_predeterminada?: boolean
+          estado: string
+          etiqueta?: string | null
+          id?: never
+          lat?: number | null
+          lng?: number | null
+          municipio: string
+          numero_exterior: string
+          numero_interior?: string | null
+          referencias?: string | null
+          telefono: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calle?: string
+          colonia?: string
+          cp?: string
+          created_at?: string
+          destinatario?: string
+          entre_calles?: string | null
+          es_predeterminada?: boolean
+          estado?: string
+          etiqueta?: string | null
+          id?: never
+          lat?: number | null
+          lng?: number | null
+          municipio?: string
+          numero_exterior?: string
+          numero_interior?: string | null
+          referencias?: string | null
+          telefono?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       empresa: {
         Row: {
@@ -1780,6 +1879,16 @@ export type Database = {
           _nota: string
         }
         Returns: undefined
+      }
+      ecommerce_buscar_cp: {
+        Args: { _cp: string }
+        Returns: {
+          ciudad: string
+          colonia: string
+          estado: string
+          municipio: string
+          tipo_asentamiento: string
+        }[]
       }
       ecommerce_id_empresa: { Args: never; Returns: number }
       ecommerce_imagenes_producto: {

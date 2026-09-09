@@ -7,6 +7,7 @@ import { PagoResultado } from "../pages/PagoResultado";
 import { EstadoPedidoPagina } from "../pages/EstadoPedidoPagina";
 import { Acceso } from "../pages/Acceso";
 import { MisPedidos } from "../pages/MisPedidos";
+import { MisDirecciones } from "../pages/MisDirecciones";
 import { RutaProtegida } from "../components/organismos/RutaProtegida";
 
 export function AppRouter() {
@@ -26,6 +27,14 @@ export function AppRouter() {
         element={
           <RutaProtegida>
             <MisPedidos />
+          </RutaProtegida>
+        }
+      />
+      <Route
+        path="/mis-direcciones"
+        element={
+          <RutaProtegida>
+            <MisDirecciones />
           </RutaProtegida>
         }
       />

@@ -1,6 +1,7 @@
 import styled from "styled-components";
 import { Link, useParams } from "react-router-dom";
 import { useEstadoPedidoQuery } from "../tanstack/CheckoutStack";
+import { lineaDireccion } from "../utils/direccion";
 import { v } from "../styles/variables";
 
 const ETIQUETAS: Record<string, string> = {
@@ -43,6 +44,23 @@ export function EstadoPedidoPagina() {
       </ul>
 
       <div className="total">Total: $ {data.montoTotal.toLocaleString()}</div>
+
+      {data.envio && (
+        <div className="envio">
+          <h2>Envío a</h2>
+          <p className="dest">
+            <strong>{data.envio.destinatario}</strong> · Tel.{" "}
+            {data.envio.telefono}
+          </p>
+          <p>{lineaDireccion(data.envio)}</p>
+          {data.envio.entreCalles && (
+            <p className="extra">Entre calles: {data.envio.entreCalles}</p>
+          )}
+          {data.envio.referencias && (
+            <p className="extra">Referencias: {data.envio.referencias}</p>
+          )}
+        </div>
+      )}
 
       <Link to="/">Volver al catálogo</Link>
     </Container>
@@ -117,5 +135,33 @@ const Container = styled.div`
     text-align: right;
     margin-bottom: 24px;
     color: ${v.colorTexto};
+  }
+
+  .envio {
+    padding: 16px 18px;
+    margin-bottom: 24px;
+    border: 1px solid ${v.borderSutil};
+    background: ${v.bgTarjeta};
+    border-radius: ${v.borderRadius};
+
+    h2 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: ${v.colorPrincipal};
+      margin: 0 0 8px;
+    }
+    p {
+      margin: 0 0 4px;
+      font-size: 13.5px;
+      color: ${v.colorTextoSuave};
+    }
+    .dest strong {
+      color: ${v.colorTexto};
+    }
+    .extra {
+      font-size: 12.5px;
+      color: ${v.colorTextoSuave2};
+    }
   }
 `;

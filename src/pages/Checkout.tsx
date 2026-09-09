@@ -4,7 +4,9 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useCarritoStore, useTotalCarrito } from "../store/CarritoStore";
 import { useCrearPreferenciaMutation } from "../tanstack/CheckoutStack";
+import { SelectorDireccion } from "../components/organismos/SelectorDireccion";
 import { claveCarritoItem } from "../types/dominio";
+import type { EnvioCheckout } from "../supabaseCrud/crudCheckout";
 import { v } from "../styles/variables";
 
 export function Checkout() {
@@ -12,6 +14,7 @@ export function Checkout() {
   const vaciar = useCarritoStore((s) => s.vaciar);
   const total = useTotalCarrito();
   const [enviando, setEnviando] = useState(false);
+  const [envio, setEnvio] = useState<EnvioCheckout | null>(null);
 
   const { mutateAsync } = useCrearPreferenciaMutation();
 
@@ -26,9 +29,13 @@ export function Checkout() {
   }
 
   const pagar = async () => {
+    if (!envio) {
+      toast.error("Elegí o cargá una dirección de envío.");
+      return;
+    }
     setEnviando(true);
     try {
-      const { initPoint } = await mutateAsync(items);
+      const { initPoint } = await mutateAsync({ items, envio });
       vaciar();
       window.location.href = initPoint;
     } catch (err) {
@@ -58,10 +65,20 @@ export function Checkout() {
         ))}
       </ul>
 
+      <SelectorDireccion onEnvio={setEnvio} />
+
       <div className="total">Total: $ {total.toLocaleString()}</div>
 
-      <button type="button" disabled={enviando} onClick={pagar}>
-        {enviando ? "Redirigiendo a Mercado Pago..." : "Pagar con Mercado Pago"}
+      <button
+        type="button"
+        disabled={enviando || !envio}
+        onClick={pagar}
+      >
+        {enviando
+          ? "Redirigiendo a Mercado Pago..."
+          : !envio
+            ? "Elegí una dirección de envío"
+            : "Pagar con Mercado Pago"}
       </button>
 
       <p className="nota">
@@ -74,7 +91,7 @@ export function Checkout() {
 }
 
 const Container = styled.div`
-  max-width: 560px;
+  max-width: 640px;
   margin: 40px auto;
   padding: 0 24px 60px;
 
