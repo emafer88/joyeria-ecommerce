@@ -19,7 +19,7 @@ export function EstadoPedidoPagina() {
     return (
       <Container>
         <p>No encontramos ese pedido.</p>
-        <Link to="/">Volver al catálogo</Link>
+        <Link to="/catalogo">Volver al catálogo</Link>
       </Container>
     );
 
@@ -62,7 +62,7 @@ export function EstadoPedidoPagina() {
         </div>
       )}
 
-      <Link to="/">Volver al catálogo</Link>
+      <Link to="/catalogo">Volver al catálogo</Link>
     </Container>
   );
 }

@@ -3,6 +3,7 @@
 // los hooks solo orquestan cache/fetch y llaman a `crudCatalogo.ts`.
 import { useQuery } from "@tanstack/react-query";
 import {
+  MostrarBanners,
   MostrarCategorias,
   MostrarImagenesProducto,
   MostrarImagenesVariante,
@@ -13,6 +14,7 @@ import {
 } from "../supabaseCrud/crudCatalogo";
 import type { FiltrosCatalogo } from "../types/dominio";
 
+export const K_BANNERS = "ecommerce banners";
 export const K_CATEGORIAS = "ecommerce categorias";
 export const K_PRODUCTOS = "ecommerce productos";
 export const K_PRODUCTO_DETALLE = "ecommerce producto detalle";
@@ -20,6 +22,13 @@ export const K_IMAGENES_PRODUCTO = "ecommerce imagenes producto";
 export const K_IMAGENES_VARIANTE = "ecommerce imagenes variante";
 export const K_VARIANTES = "ecommerce variantes disponibles";
 export const K_PIEZAS_VARIANTE = "ecommerce piezas disponibles";
+
+export const useBannersQuery = () =>
+  useQuery({
+    queryKey: [K_BANNERS],
+    queryFn: MostrarBanners,
+    staleTime: 5 * 60 * 1000,
+  });
 
 export const useCategoriasQuery = () =>
   useQuery({

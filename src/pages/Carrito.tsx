@@ -20,7 +20,7 @@ export function Carrito() {
       <Container>
         <h1>Tu carrito</h1>
         <p>Todavía no agregaste nada.</p>
-        <Link to="/">Ir al catálogo</Link>
+        <Link to="/catalogo">Ir al catálogo</Link>
       </Container>
     );
   }

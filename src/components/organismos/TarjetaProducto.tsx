@@ -10,6 +10,7 @@ interface Props {
 export function TarjetaProducto({ producto }: Props) {
   const sinStock =
     producto.totalDisponible !== null && producto.totalDisponible <= 0;
+  const enOferta = producto.precioOferta !== null;
 
   return (
     <Container to={`/producto/${producto.id}`}>
@@ -20,15 +21,27 @@ export function TarjetaProducto({ producto }: Props) {
           <div className="sin-imagen">Sin imagen</div>
         )}
         {sinStock && <span className="badge-agotado">Agotado</span>}
+        {!sinStock && enOferta && <span className="badge-oferta">Oferta</span>}
       </div>
       <div className="info">
         <span className="categoria">{producto.categoria}</span>
         <h3>{producto.nombre}</h3>
-        <span className="precio">
-          {producto.precioVenta > 0
-            ? `$ ${producto.precioVenta.toLocaleString()}`
-            : "Consultar precio"}
-        </span>
+        {enOferta ? (
+          <span className="precios">
+            <span className="precio-anterior">
+              $ {producto.precioVenta.toLocaleString()}
+            </span>
+            <span className="precio precio-oferta">
+              $ {producto.precioOferta!.toLocaleString()}
+            </span>
+          </span>
+        ) : (
+          <span className="precio">
+            {producto.precioVenta > 0
+              ? `$ ${producto.precioVenta.toLocaleString()}`
+              : "Consultar precio"}
+          </span>
+        )}
       </div>
     </Container>
   );
@@ -80,6 +93,17 @@ const Container = styled(Link)`
       border-radius: 20px;
       border: 1px solid ${v.borderSutil};
     }
+    .badge-oferta {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: ${v.colorExito};
+      color: ${v.colorTexto};
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
   }
 
   .info {
@@ -105,5 +129,21 @@ const Container = styled(Link)`
   .precio {
     font-weight: 700;
     color: ${v.colorPrincipal};
+  }
+
+  .precios {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .precio-anterior {
+    font-size: 12.5px;
+    color: ${v.colorTextoSuave2};
+    text-decoration: line-through;
+  }
+
+  .precio-oferta {
+    color: ${v.colorExito};
   }
 `;

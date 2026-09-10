@@ -23,7 +23,7 @@ export function Checkout() {
       <Container>
         <h1>Checkout</h1>
         <p>Tu carrito está vacío.</p>
-        <Link to="/">Ir al catálogo</Link>
+        <Link to="/catalogo">Ir al catálogo</Link>
       </Container>
     );
   }

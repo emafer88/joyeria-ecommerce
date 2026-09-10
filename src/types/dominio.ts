@@ -21,6 +21,19 @@ export interface ProductoCatalogo {
   imagenPortada: string | null;
   /** null = producto sin control de stock (se interpreta como siempre disponible). */
   totalDisponible: number | null;
+  /** Si aparece en la vitrina "Productos destacados" del home (admin: proyecto-joyeria). */
+  destacado: boolean;
+  /** Precio de oferta vigente ahora mismo, o null si no hay oferta activa. */
+  precioOferta: number | null;
+}
+
+/** Banner del hero del home (admin: proyecto-joyeria → Productos → Banners). */
+export interface Banner {
+  id: number;
+  titulo: string;
+  subtitulo: string | null;
+  imagenUrl: string;
+  linkDestino: string | null;
 }
 
 export interface ProductoDetalle {

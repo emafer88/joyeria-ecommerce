@@ -48,13 +48,13 @@ export function ProductoDetalle() {
     return (
       <Container>
         <p>No se encontró el producto.</p>
-        <Link to="/">Volver al catálogo</Link>
+        <Link to="/catalogo">Volver al catálogo</Link>
       </Container>
     );
 
   return (
     <Container>
-      <Link className="volver" to="/">
+      <Link className="volver" to="/catalogo">
         ← Volver al catálogo
       </Link>
 
