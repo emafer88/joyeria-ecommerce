@@ -2,9 +2,51 @@ import { useEffect, useState } from "react";
 import styled from "styled-components";
 import { useForm } from "react-hook-form";
 import { useCodigoPostalQuery } from "../../tanstack/DireccionesStack";
-import { MapaUbicacion } from "./MapaUbicacion";
 import type { Direccion, DireccionInput } from "../../types/dominio";
 import { v } from "../../styles/variables";
+
+const API_KEY_MAPTILER = import.meta.env.VITE_MAPTILER_API_KEY;
+
+interface DatosReversos {
+  cp?: string;
+  estado?: string;
+  municipio?: string;
+  colonia?: string;
+  calle?: string;
+  numeroExterior?: string;
+}
+
+/** Geocodificación inversa (lat/lng -> dirección) para autocompletar el form
+ *  al usar el botón "Usar mi ubicación actual". Sin API key, o si MapTiler
+ *  no devuelve nada útil, se resuelve `null` y el usuario completa a mano. */
+async function revGeocodificar(
+  lat: number,
+  lng: number
+): Promise<DatosReversos | null> {
+  if (!API_KEY_MAPTILER) return null;
+  const url = `https://api.maptiler.com/geocoding/${lng},${lat}.json?key=${API_KEY_MAPTILER}&language=es`;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+  const data = (await res.json()) as {
+    features?: {
+      text?: string;
+      address?: string;
+      context?: { id: string; text: string }[];
+    }[];
+  };
+  const feature = data.features?.[0];
+  if (!feature) return null;
+  const porTipo = (prefijo: string) =>
+    feature.context?.find((c) => c.id.startsWith(prefijo))?.text;
+  return {
+    calle: feature.text,
+    numeroExterior: feature.address,
+    colonia: porTipo("neighborhood") ?? porTipo("subdistrict"),
+    municipio: porTipo("place") ?? porTipo("municipality"),
+    estado: porTipo("region"),
+    cp: porTipo("postal_code"),
+  };
+}
 
 interface Props {
   inicial?: Direccion | null;
@@ -65,17 +107,18 @@ export function FormularioDireccion({
   // compiler no está habilitado en este proyecto (ver README).
   // oxlint-disable-next-line react/incompatible-library
   const cp = watch("cp");
-  const calle = watch("calle");
-  const numeroExterior = watch("numeroExterior");
   const colonia = watch("colonia");
-  const municipio = watch("municipio");
-  const estado = watch("estado");
 
   const { data: lookup, isFetching: buscandoCp } = useCodigoPostalQuery(cp);
 
   const [coloniaLibre, setColoniaLibre] = useState(false);
   const [lat, setLat] = useState<number | null>(inicial?.lat ?? null);
   const [lng, setLng] = useState<number | null>(inicial?.lng ?? null);
+  const [ubicando, setUbicando] = useState(false);
+  const [estadoUbicacion, setEstadoUbicacion] = useState<
+    "ok" | "error" | null
+  >(null);
+  const [mensajeUbicacion, setMensajeUbicacion] = useState("");
 
   // CP resuelto -> autocompletar estado/municipio y, si la colonia actual no
   // está en la lista, dejar que el usuario elija.
@@ -90,14 +133,56 @@ export function FormularioDireccion({
 
   const cpValido = /^\d{5}$/.test(cp);
   const cpSinResultados = cpValido && !buscandoCp && lookup === null;
-  const direccionTexto = [
-    `${calle} ${numeroExterior}`.trim(),
-    colonia,
-    municipio,
-    `${estado} ${cp}`.trim(),
-  ]
-    .filter(Boolean)
-    .join(", ");
+
+  const usarUbicacionActual = () => {
+    if (!("geolocation" in navigator)) {
+      setEstadoUbicacion("error");
+      setMensajeUbicacion("Tu navegador no soporta geolocalización.");
+      return;
+    }
+    setUbicando(true);
+    setEstadoUbicacion(null);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setLat(latitude);
+        setLng(longitude);
+        try {
+          const datos = await revGeocodificar(latitude, longitude);
+          if (datos?.cp) setValue("cp", datos.cp);
+          if (datos?.estado) setValue("estado", datos.estado);
+          if (datos?.municipio) setValue("municipio", datos.municipio);
+          if (datos?.colonia) setValue("colonia", datos.colonia);
+          if (datos?.calle) setValue("calle", datos.calle);
+          if (datos?.numeroExterior)
+            setValue("numeroExterior", datos.numeroExterior);
+          setEstadoUbicacion("ok");
+          setMensajeUbicacion(
+            datos
+              ? "Ubicación detectada: revisá los datos y completá lo que falte."
+              : "Ubicación detectada, pero no se pudo traducir a dirección: completá a mano."
+          );
+        } catch {
+          setEstadoUbicacion("ok");
+          setMensajeUbicacion(
+            "Ubicación detectada, pero no se pudo traducir a dirección: completá a mano."
+          );
+        } finally {
+          setUbicando(false);
+        }
+      },
+      (err) => {
+        setUbicando(false);
+        setEstadoUbicacion("error");
+        setMensajeUbicacion(
+          err.code === err.PERMISSION_DENIED
+            ? "Permiso de ubicación denegado. Completá la dirección a mano."
+            : "No se pudo obtener tu ubicación. Completá la dirección a mano."
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const enviar = handleSubmit((c) => {
     onGuardar({
@@ -120,6 +205,22 @@ export function FormularioDireccion({
 
   return (
     <Form onSubmit={enviar} noValidate>
+      <div className="ubicacion">
+        <button
+          type="button"
+          className="ubicacion-btn"
+          onClick={usarUbicacionActual}
+          disabled={ubicando}
+        >
+          {ubicando ? "Obteniendo ubicación…" : "📍 Usar mi ubicación actual"}
+        </button>
+        {estadoUbicacion && (
+          <em className={estadoUbicacion === "error" ? "" : "info"}>
+            {mensajeUbicacion}
+          </em>
+        )}
+      </div>
+
       <div className="grid">
         <label className="campo">
           <span>Destinatario</span>
@@ -252,18 +353,6 @@ export function FormularioDireccion({
         </label>
       </div>
 
-      <div className="mapa-wrap">
-        <MapaUbicacion
-          lat={lat}
-          lng={lng}
-          direccionTexto={direccionTexto}
-          onCambio={(la, ln) => {
-            setLat(la);
-            setLng(ln);
-          }}
-        />
-      </div>
-
       <div className="acciones">
         {onCancelar && (
           <button type="button" className="cancelar" onClick={onCancelar}>
@@ -282,6 +371,31 @@ const Form = styled.form`
   display: flex;
   flex-direction: column;
   gap: 18px;
+
+  .ubicacion {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+
+    em {
+      font-style: normal;
+      font-size: 12px;
+      color: #ff8a80;
+    }
+    em.info {
+      color: ${v.colorTextoSuave2};
+    }
+  }
+
+  .ubicacion-btn {
+    border-color: ${v.borderDorado};
+    background: transparent;
+    color: ${v.colorPrincipal};
+    &:hover:not(:disabled) {
+      background: ${v.bgTarjetaHover};
+    }
+  }
 
   .grid {
     display: grid;

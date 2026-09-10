@@ -3,8 +3,9 @@
 interface ImportMetaEnv {
   readonly VITE_APP_SUPABASE_URL: string;
   readonly VITE_APP_SUPABASE_ANON_KEY: string;
-  /** MapTiler (tiles + geocoding). Opcional: sin key, el formulario de
-   *  dirección funciona sin mapa ni lat/lng. */
+  /** MapTiler (geocodificación inversa). Opcional: sin key, el botón
+   *  "Usar mi ubicación actual" solo completa lat/lng y el resto se
+   *  llena a mano. */
   readonly VITE_MAPTILER_API_KEY?: string;
 }
 
