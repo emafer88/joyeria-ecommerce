@@ -5,6 +5,11 @@ import { useCategoriasQuery } from "../../tanstack/CatalogoStack";
 import { useFiltrosCatalogoStore } from "../../store/FiltrosCatalogoStore";
 import { v } from "../../styles/variables";
 
+// `categorias.icono` en la base es "-" (sin ícono) o la URL pública de una
+// imagen subida desde el admin (ver crudCategorias.jsx → subirImagen). No es
+// un emoji/glifo corto: hay que renderizarlo como <img>, no como texto.
+const esUrlImagen = (icono: string) => /^https?:\/\//.test(icono);
+
 export function SeccionCategorias() {
   const { data: categorias, isLoading } = useCategoriasQuery();
   const setCategoria = useFiltrosCatalogoStore((s) => s.setCategoria);
@@ -33,7 +38,11 @@ export function SeccionCategorias() {
               className="icono"
               style={c.color ? { background: `${c.color}22`, color: c.color } : undefined}
             >
-              {c.icono && c.icono !== "-" ? c.icono : <GiGemPendant />}
+              {c.icono && esUrlImagen(c.icono) ? (
+                <img src={c.icono} alt="" />
+              ) : (
+                <GiGemPendant />
+              )}
             </span>
             <span className="nombre">{c.nombre}</span>
           </button>
@@ -95,6 +104,13 @@ const Container = styled.section`
     background: rgba(243, 210, 12, 0.12);
     color: ${v.colorPrincipal};
     font-size: 20px;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
   }
 
   .nombre {
