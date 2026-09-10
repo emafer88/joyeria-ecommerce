@@ -1907,6 +1907,16 @@ export type Database = {
           url: string
         }[]
       }
+      ecommerce_listar_banners: {
+        Args: never
+        Returns: {
+          id: number
+          imagen_url: string
+          link_destino: string | null
+          subtitulo: string | null
+          titulo: string
+        }[]
+      }
       ecommerce_listar_categorias: {
         Args: never
         Returns: {
@@ -1929,11 +1939,13 @@ export type Database = {
         Returns: {
           categoria: string
           descripcion: string
+          destacado: boolean
           es_joyeria: boolean
           id: number
           id_categoria: number
           imagen_portada: string
           nombre: string
+          precio_oferta: number | null
           precio_venta: number
           total_count: number
           total_disponible: number

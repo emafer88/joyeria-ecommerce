@@ -1,4 +1,5 @@
 import { Route, Routes } from "react-router-dom";
+import { Inicio } from "../pages/Inicio";
 import { Catalogo } from "../pages/Catalogo";
 import { ProductoDetalle } from "../pages/ProductoDetalle";
 import { Carrito } from "../pages/Carrito";
@@ -13,7 +14,8 @@ import { RutaProtegida } from "../components/organismos/RutaProtegida";
 export function AppRouter() {
   return (
     <Routes>
-      <Route path="/" element={<Catalogo />} />
+      <Route path="/" element={<Inicio />} />
+      <Route path="/catalogo" element={<Catalogo />} />
       <Route path="/producto/:id" element={<ProductoDetalle />} />
       <Route path="/carrito" element={<Carrito />} />
       <Route path="/checkout" element={<Checkout />} />

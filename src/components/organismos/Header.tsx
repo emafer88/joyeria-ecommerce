@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import styled from "styled-components";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { FiSearch } from "react-icons/fi";
 import { useCantidadCarrito } from "../../store/CarritoStore";
 import { useAuthStore, nombreVisible } from "../../store/AuthStore";
+import { useFiltrosCatalogoStore } from "../../store/FiltrosCatalogoStore";
 import { CerrarSesion } from "../../supabaseCrud/crudAuth";
 import { v } from "../../styles/variables";
 import logo from "../../assets/logo.png";
@@ -12,8 +14,16 @@ export function Header() {
   const cantidad = useCantidadCarrito();
   const user = useAuthStore((s) => s.user);
   const cargando = useAuthStore((s) => s.cargando);
+  const setBuscador = useFiltrosCatalogoStore((s) => s.setBuscador);
   const navigate = useNavigate();
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
+
+  const buscar = (e: FormEvent) => {
+    e.preventDefault();
+    setBuscador(busqueda.trim() || null);
+    navigate("/catalogo");
+  };
 
   const salir = async () => {
     setMenuAbierto(false);
@@ -33,6 +43,23 @@ export function Header() {
         </span>
         <span className="nombre">CUBIKS JEWELRY</span>
       </Link>
+
+      <nav className="enlaces">
+        <Link to="/">Inicio</Link>
+        <Link to="/catalogo">Catálogo</Link>
+      </nav>
+
+      <form className="buscador" onSubmit={buscar}>
+        <input
+          type="search"
+          placeholder="Buscar joyas..."
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+        />
+        <button type="submit" aria-label="Buscar">
+          <FiSearch />
+        </button>
+      </form>
 
       <nav>
         {!cargando &&
@@ -87,8 +114,10 @@ const Container = styled.header`
   top: 0;
   z-index: 10;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 12px 20px;
   padding: 16px 24px;
   background: rgba(10, 9, 15, 0.75);
   backdrop-filter: blur(10px);
@@ -103,6 +132,74 @@ const Container = styled.header`
     display: flex;
     align-items: center;
     gap: 10px;
+  }
+
+  .enlaces {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    order: 3;
+    width: 100%;
+    @media (min-width: 860px) {
+      order: 0;
+      width: auto;
+    }
+
+    a {
+      font-size: 13.5px;
+      color: ${v.colorTextoSuave};
+      transition: 0.2s;
+      &:hover {
+        color: ${v.colorPrincipal};
+      }
+    }
+  }
+
+  .buscador {
+    display: flex;
+    align-items: center;
+    flex: 1 1 200px;
+    max-width: 320px;
+    order: 4;
+    @media (min-width: 860px) {
+      order: 0;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 20px 0 0 20px;
+      border: 1px solid ${v.borderSutil};
+      border-right: none;
+      background: rgba(255, 255, 255, 0.03);
+      color: ${v.colorTexto};
+      font-size: 13px;
+      font-family: inherit;
+      &::placeholder {
+        color: ${v.colorTextoSuave2};
+      }
+      &:focus {
+        outline: none;
+        border-color: ${v.borderDorado};
+      }
+    }
+
+    button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 12px;
+      border-radius: 0 20px 20px 0;
+      border: 1px solid ${v.borderSutil};
+      border-left: none;
+      background: rgba(255, 255, 255, 0.03);
+      color: ${v.colorTextoSuave};
+      cursor: pointer;
+      transition: 0.2s;
+      &:hover {
+        color: ${v.colorPrincipal};
+      }
+    }
   }
 
   .isotipo {

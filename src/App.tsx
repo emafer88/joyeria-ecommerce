@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import { GlobalStyles } from "./styles/GlobalStyles";
 import { AppRouter } from "./router/AppRouter";
 import { Header } from "./components/organismos/Header";
+import { Footer } from "./components/organismos/Footer";
 
 const queryClient = new QueryClient();
 
@@ -15,6 +16,7 @@ function App() {
       <BrowserRouter>
         <Header />
         <AppRouter />
+        <Footer />
       </BrowserRouter>
     </QueryClientProvider>
   );

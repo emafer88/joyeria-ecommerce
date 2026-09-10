@@ -27,7 +27,7 @@ export function MisPedidos() {
       )}
       {data && data.length === 0 && (
         <p>
-          Todavía no hiciste ningún pedido. <Link to="/">Ir al catálogo</Link>
+          Todavía no hiciste ningún pedido. <Link to="/catalogo">Ir al catálogo</Link>
         </p>
       )}
 

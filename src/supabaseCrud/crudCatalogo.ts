@@ -3,6 +3,7 @@
 // Mismo patrón que `crudJoyeria.jsx` del proyecto POS original.
 import { supabase } from "./supabase.config";
 import type {
+  Banner,
   CategoriaCatalogo,
   FiltrosCatalogo,
   ImagenProducto,
@@ -49,9 +50,23 @@ export async function MostrarProductos(
     esJoyeria: p.es_joyeria,
     imagenPortada: p.imagen_portada,
     totalDisponible: p.total_disponible,
+    destacado: p.destacado,
+    precioOferta: p.precio_oferta,
   }));
 
   return { items, totalCount: filas[0]?.total_count ?? 0 };
+}
+
+export async function MostrarBanners(): Promise<Banner[]> {
+  const { data, error } = await supabase.rpc("ecommerce_listar_banners");
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((b) => ({
+    id: b.id,
+    titulo: b.titulo,
+    subtitulo: b.subtitulo,
+    imagenUrl: b.imagen_url,
+    linkDestino: b.link_destino,
+  }));
 }
 
 export async function MostrarProductoDetalle(

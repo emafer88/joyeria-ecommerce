@@ -43,7 +43,7 @@ export function PagoResultado({ tipo }: Props) {
           Ver estado de mi pedido
         </Link>
       )}
-      <Link className="volver" to="/">
+      <Link className="volver" to="/catalogo">
         Volver al catálogo
       </Link>
     </Container>
