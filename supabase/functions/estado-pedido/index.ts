@@ -34,6 +34,14 @@ Deno.serve(async (req) => {
     .select("cantidad, precio_venta, total, descripcion, productos(nombre)")
     .eq("id_venta", venta.id);
 
+  const { data: envio } = await supabaseAdmin
+    .from("ecommerce_orden_envio")
+    .select(
+      "destinatario, telefono, cp, estado, municipio, colonia, calle, numero_exterior, numero_interior, entre_calles, referencias, lat, lng"
+    )
+    .eq("id_orden_externa", idOrdenExterna)
+    .maybeSingle();
+
   return json({
     estado: venta.estado,
     nroComprobante: venta.nro_comprobante,
@@ -45,5 +53,22 @@ Deno.serve(async (req) => {
       precioVenta: d.precio_venta,
       total: d.total,
     })),
+    envio: envio
+      ? {
+          destinatario: envio.destinatario,
+          telefono: envio.telefono,
+          cp: envio.cp,
+          estado: envio.estado,
+          municipio: envio.municipio,
+          colonia: envio.colonia,
+          calle: envio.calle,
+          numeroExterior: envio.numero_exterior,
+          numeroInterior: envio.numero_interior,
+          entreCalles: envio.entre_calles,
+          referencias: envio.referencias,
+          lat: envio.lat,
+          lng: envio.lng,
+        }
+      : null,
   });
 });

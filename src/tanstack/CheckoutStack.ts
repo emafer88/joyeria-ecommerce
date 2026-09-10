@@ -2,6 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   CrearPreferenciaPago,
   MostrarEstadoPedido,
+  type EnvioCheckout,
 } from "../supabaseCrud/crudCheckout";
 import type { CarritoItem } from "../types/dominio";
 
@@ -9,7 +10,13 @@ export const K_ESTADO_PEDIDO = "ecommerce estado pedido";
 
 export const useCrearPreferenciaMutation = () =>
   useMutation({
-    mutationFn: (items: CarritoItem[]) => CrearPreferenciaPago(items),
+    mutationFn: ({
+      items,
+      envio,
+    }: {
+      items: CarritoItem[];
+      envio: EnvioCheckout;
+    }) => CrearPreferenciaPago(items, envio),
   });
 
 export const useEstadoPedidoQuery = (idOrdenExterna: string | undefined) =>

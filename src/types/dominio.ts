@@ -107,3 +107,74 @@ export type CarritoItem = CarritoItemPieza | CarritoItemStock;
 export function claveCarritoItem(item: CarritoItem): string {
   return item.tipo === "pieza" ? `pieza:${item.idPieza}` : `stock:${item.idProducto}`;
 }
+
+// ----------------------------------------------------------------------------
+// Cuenta del comprador (Supabase Auth). Fila aplanada de `ecommerce_mis_pedidos`.
+// El detalle de cada pedido sigue saliendo de la Edge Function estado-pedido
+// (ver EstadoPedido en supabaseCrud/crudCheckout.ts).
+// ----------------------------------------------------------------------------
+
+export interface PedidoResumen {
+  idOrdenExterna: string;
+  fecha: string;
+  estado: string;
+  montoTotal: number;
+  nroComprobante: string | null;
+  cantidadProductos: number;
+}
+
+// ----------------------------------------------------------------------------
+// Direcciones de envío (México). El CP ancla estado + municipio + colonia
+// (ver ecommerce_buscar_cp). `lat`/`lng` vienen del pin del mapa y pueden
+// faltar. `EnvioSnapshot` es la copia inmutable que queda pegada al pedido.
+// ----------------------------------------------------------------------------
+
+/** Campos editables de una dirección (form de alta/edición). */
+export interface DireccionInput {
+  etiqueta: string | null;
+  destinatario: string;
+  telefono: string;
+  cp: string;
+  estado: string;
+  municipio: string;
+  colonia: string;
+  calle: string;
+  numeroExterior: string;
+  numeroInterior: string | null;
+  entreCalles: string | null;
+  referencias: string | null;
+  lat: number | null;
+  lng: number | null;
+}
+
+/** Dirección guardada del usuario (fila de `ecommerce_direccion`). */
+export interface Direccion extends DireccionInput {
+  id: number;
+  esPredeterminada: boolean;
+}
+
+/** Copia de la dirección elegida al momento de comprar (la devuelve
+ *  `estado-pedido`). Sin `id` ni `etiqueta`: es un snapshot, no la libreta. */
+export interface EnvioSnapshot {
+  destinatario: string;
+  telefono: string;
+  cp: string;
+  estado: string;
+  municipio: string;
+  colonia: string;
+  calle: string;
+  numeroExterior: string;
+  numeroInterior: string | null;
+  entreCalles: string | null;
+  referencias: string | null;
+  lat: number | null;
+  lng: number | null;
+}
+
+/** Resultado de `ecommerce_buscar_cp`, agrupado para el form. */
+export interface ResultadoCodigoPostal {
+  estado: string;
+  municipio: string;
+  ciudad: string | null;
+  colonias: string[];
+}

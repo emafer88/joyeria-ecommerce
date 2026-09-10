@@ -26,3 +26,6 @@ dist-ssr
 
 # Supabase CLI local cache
 supabase/.temp
+
+# Dataset de códigos postales (se baja aparte para scripts/seed-cp-mexico.mjs)
+CPdescarga.txt
