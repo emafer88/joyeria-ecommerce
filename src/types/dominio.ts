@@ -96,6 +96,8 @@ export interface PiezaDisponible {
   medidas: string | null;
   /** Precio con descuento de esta pieza puntual, o null si no hay oferta. */
   precioOferta: number | null;
+  /** Agrupa piezas físicamente iguales (mismo peso+talla+medidas) de la variante. */
+  idGrupo: number;
 }
 
 /** Filtros del catálogo, atados 1:1 a los parámetros de `ecommerce_listar_productos`. */

@@ -161,5 +161,6 @@ export async function MostrarPiezasDisponibles(
     talla: p.talla,
     medidas: p.medidas,
     precioOferta: p.precio_oferta,
+    idGrupo: p.id_grupo,
   }));
 }

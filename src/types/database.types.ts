@@ -1975,6 +1975,7 @@ export type Database = {
       ecommerce_piezas_disponibles: {
         Args: { _id_variante: number }
         Returns: {
+          id_grupo: number
           id_pieza: number
           medidas: string | null
           peso: number

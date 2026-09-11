@@ -20,24 +20,20 @@ export function ProductoDetalle() {
   const [idVarianteElegida, setIdVarianteElegida] = useState<number>();
   const [cantidad, setCantidad] = useState(1);
 
-  // Filtros sobre las piezas de la variante elegida — se arman con lo que
-  // realmente hay entre las piezas cargadas, no son categorías fijas.
+  // Filtros sobre las piezas de la variante elegida — solo por características
+  // físicas (peso/medida/talla), no por precio: el precio puede variar dentro
+  // de un mismo grupo de piezas iguales (oferta puntual) y no es un criterio
+  // para decidir qué pieza física querés.
   const [filtroTalla, setFiltroTalla] = useState<string>();
   const [filtroMedidas, setFiltroMedidas] = useState<string>();
   const [filtroPesoMin, setFiltroPesoMin] = useState<number>();
   const [filtroPesoMax, setFiltroPesoMax] = useState<number>();
-  const [filtroPrecioMin, setFiltroPrecioMin] = useState<number>();
-  const [filtroPrecioMax, setFiltroPrecioMax] = useState<number>();
-  const [soloOferta, setSoloOferta] = useState(false);
 
   function limpiarFiltrosPiezas() {
     setFiltroTalla(undefined);
     setFiltroMedidas(undefined);
     setFiltroPesoMin(undefined);
     setFiltroPesoMax(undefined);
-    setFiltroPrecioMin(undefined);
-    setFiltroPrecioMax(undefined);
-    setSoloOferta(false);
   }
 
   const { data: producto, isLoading, isError } =
@@ -72,30 +68,49 @@ export function ProductoDetalle() {
   const pesos = piezasDeVariante.map((p) => p.peso);
   const pesoMinDisp = pesos.length ? Math.min(...pesos) : null;
   const pesoMaxDisp = pesos.length ? Math.max(...pesos) : null;
-  const preciosEfectivos = piezasDeVariante.map((p) => p.precioOferta ?? p.precioVenta);
-  const precioMinDisp = preciosEfectivos.length ? Math.min(...preciosEfectivos) : null;
-  const precioMaxDisp = preciosEfectivos.length ? Math.max(...preciosEfectivos) : null;
-  const hayOfertasEnVariante = piezasDeVariante.some((p) => p.precioOferta !== null);
 
   const piezasVisibles = piezasDeVariante.filter((p) => {
     if (filtroTalla && p.talla !== filtroTalla) return false;
     if (filtroMedidas && p.medidas !== filtroMedidas) return false;
     if (filtroPesoMin !== undefined && p.peso < filtroPesoMin) return false;
     if (filtroPesoMax !== undefined && p.peso > filtroPesoMax) return false;
-    const precioEfectivo = p.precioOferta ?? p.precioVenta;
-    if (filtroPrecioMin !== undefined && precioEfectivo < filtroPrecioMin) return false;
-    if (filtroPrecioMax !== undefined && precioEfectivo > filtroPrecioMax) return false;
-    if (soloOferta && p.precioOferta === null) return false;
     return true;
   });
   const hayFiltrosPiezasActivos =
     !!filtroTalla ||
     !!filtroMedidas ||
     filtroPesoMin !== undefined ||
-    filtroPesoMax !== undefined ||
-    filtroPrecioMin !== undefined ||
-    filtroPrecioMax !== undefined ||
-    soloOferta;
+    filtroPesoMax !== undefined;
+
+  // Piezas físicamente iguales (mismo id_grupo, viene de peso+talla+medidas)
+  // se muestran una sola vez: el cliente ve una tarjeta por grupo y usa
+  // "+ Sumar otra igual" para llevarse más de una con distinto SKU.
+  const gruposVisibles = Object.values(
+    piezasVisibles.reduce<Record<number, typeof piezasVisibles>>((acc, p) => {
+      (acc[p.idGrupo] ??= []).push(p);
+      return acc;
+    }, {})
+  ).map((piezasGrupo) => {
+    const ordenadas = [...piezasGrupo].sort(
+      (a, b) => (a.precioOferta ?? a.precioVenta) - (b.precioOferta ?? b.precioVenta)
+    );
+    const enCarrito = ordenadas.filter((p) =>
+      items.some((i) => claveCarritoItem(i) === `pieza:${p.idPieza}`)
+    );
+    const siguiente = ordenadas.find(
+      (p) => !items.some((i) => claveCarritoItem(i) === `pieza:${p.idPieza}`)
+    );
+    const precios = ordenadas.map((p) => p.precioOferta ?? p.precioVenta);
+    return {
+      idGrupo: ordenadas[0].idGrupo,
+      representante: ordenadas[0],
+      enCarrito,
+      siguiente,
+      precioMin: Math.min(...precios),
+      precioMax: Math.max(...precios),
+      hayOferta: ordenadas.some((p) => p.precioOferta !== null),
+    };
+  });
   // Al elegir un material, la galería pasa a ser la de esa variante; si la
   // variante no tiene imágenes cargadas se cae a las del producto.
   const galeria =
@@ -273,9 +288,7 @@ export function ProductoDetalle() {
                 !piezasCargando &&
                 (tallasEnPiezas.length > 1 ||
                   medidasEnPiezas.length > 1 ||
-                  pesoMinDisp !== pesoMaxDisp ||
-                  precioMinDisp !== precioMaxDisp ||
-                  hayOfertasEnVariante) && (
+                  pesoMinDisp !== pesoMaxDisp) && (
                   <div className="filtros-piezas">
                     <div className="filtros-piezas__header">
                       <h2>Filtrar piezas</h2>
@@ -375,50 +388,6 @@ export function ProductoDetalle() {
                         </div>
                       )}
 
-                    {precioMinDisp !== null &&
-                      precioMaxDisp !== null &&
-                      precioMinDisp !== precioMaxDisp && (
-                        <div className="campo">
-                          <label>
-                            Precio: ${precioMinDisp.toLocaleString()} – $
-                            {precioMaxDisp.toLocaleString()}
-                          </label>
-                          <div className="rango">
-                            <input
-                              type="number"
-                              placeholder={String(precioMinDisp)}
-                              value={filtroPrecioMin ?? ""}
-                              onChange={(e) =>
-                                setFiltroPrecioMin(
-                                  e.target.value ? Number(e.target.value) : undefined
-                                )
-                              }
-                            />
-                            <span>-</span>
-                            <input
-                              type="number"
-                              placeholder={String(precioMaxDisp)}
-                              value={filtroPrecioMax ?? ""}
-                              onChange={(e) =>
-                                setFiltroPrecioMax(
-                                  e.target.value ? Number(e.target.value) : undefined
-                                )
-                              }
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                    {hayOfertasEnVariante && (
-                      <label className="chk-oferta">
-                        <input
-                          type="checkbox"
-                          checked={soloOferta}
-                          onChange={(e) => setSoloOferta(e.target.checked)}
-                        />
-                        Solo piezas en oferta
-                      </label>
-                    )}
                   </div>
                 )}
 
@@ -428,63 +397,74 @@ export function ProductoDetalle() {
                     Piezas disponibles
                     {!piezasCargando &&
                       hayFiltrosPiezasActivos &&
-                      ` (${piezasVisibles.length} de ${piezasDeVariante.length})`}
+                      ` (${gruposVisibles.length} de ${piezasDeVariante.length})`}
                   </h2>
                   {piezasCargando ? (
                     <p>Cargando piezas...</p>
-                  ) : piezasVisibles.length > 0 ? (
+                  ) : gruposVisibles.length > 0 ? (
                     <ul>
-                      {piezasVisibles.map((p) => {
-                        const clave = `pieza:${p.idPieza}`;
-                        const yaEnCarrito = items.some(
-                          (i) => claveCarritoItem(i) === clave
-                        );
-                        const precioEfectivoPieza =
-                          p.precioOferta ?? p.precioVenta;
-                        const descuentoPieza = porcentajeDescuento(
-                          p.precioVenta,
-                          p.precioOferta
-                        );
+                      {gruposVisibles.map((g) => {
+                        const { representante } = g;
+                        const descuento =
+                          g.precioMin === g.precioMax && g.hayOferta
+                            ? porcentajeDescuento(
+                                representante.precioVenta,
+                                representante.precioOferta
+                              )
+                            : null;
                         return (
-                          <li key={p.idPieza}>
+                          <li key={g.idGrupo}>
                             <span>
-                              SKU {p.sku} — {p.peso} g
-                              {p.talla ? ` — talla ${p.talla}` : ""}
-                              {p.medidas ? ` — ${p.medidas}` : ""} —{" "}
-                              {p.precioOferta !== null ? (
+                              {representante.peso} g
+                              {representante.talla
+                                ? ` — talla ${representante.talla}`
+                                : ""}
+                              {representante.medidas
+                                ? ` — ${representante.medidas}`
+                                : ""} —{" "}
+                              {g.precioMin !== g.precioMax ? (
+                                `desde $${g.precioMin.toLocaleString()}`
+                              ) : g.hayOferta ? (
                                 <>
                                   <span className="precio-anterior">
-                                    ${p.precioVenta.toLocaleString()}
+                                    ${representante.precioVenta.toLocaleString()}
                                   </span>{" "}
                                   <span className="precio-oferta">
-                                    ${precioEfectivoPieza.toLocaleString()}
+                                    ${g.precioMin.toLocaleString()}
                                   </span>
-                                  {descuentoPieza !== null &&
-                                    ` (-${descuentoPieza}%)`}
+                                  {descuento !== null && ` (-${descuento}%)`}
                                 </>
                               ) : (
-                                `$${p.precioVenta.toLocaleString()}`
+                                `$${g.precioMin.toLocaleString()}`
                               )}
+                              {g.enCarrito.length > 0 &&
+                                ` — ${g.enCarrito.length} en el carrito`}
                             </span>
                             <button
                               type="button"
-                              disabled={yaEnCarrito || !varianteElegida}
+                              disabled={!g.siguiente || !varianteElegida}
                               onClick={() => {
-                                if (!varianteElegida) return;
+                                if (!g.siguiente || !varianteElegida) return;
+                                const precioEfectivo =
+                                  g.siguiente.precioOferta ?? g.siguiente.precioVenta;
                                 agregarPieza({
-                                  idPieza: p.idPieza,
+                                  idPieza: g.siguiente.idPieza,
                                   idProducto: producto.id,
                                   idVariante: varianteElegida.idVariante,
                                   nombre: producto.nombre,
                                   material: varianteElegida.material,
                                   pureza: varianteElegida.pureza,
-                                  precioVenta: precioEfectivoPieza,
+                                  precioVenta: precioEfectivo,
                                   imagen: imagenPortada,
                                 });
                                 toast.success("Agregado al carrito");
                               }}
                             >
-                              {yaEnCarrito ? "En el carrito" : "Agregar"}
+                              {g.enCarrito.length === 0
+                                ? "Agregar"
+                                : g.siguiente
+                                  ? "+ Sumar otra igual"
+                                  : "Sin más unidades"}
                             </button>
                           </li>
                         );
@@ -762,15 +742,6 @@ const Container = styled.div`
         font-family: inherit;
         font-size: 13px;
       }
-    }
-
-    .chk-oferta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      color: ${v.colorTextoSuave};
-      cursor: pointer;
     }
   }
 
