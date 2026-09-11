@@ -1944,6 +1944,7 @@ export type Database = {
           id: number
           id_categoria: number
           imagen_portada: string
+          marca: string | null
           nombre: string
           precio_oferta: number | null
           precio_venta: number
@@ -1976,11 +1977,16 @@ export type Database = {
         Returns: {
           categoria: string
           descripcion: string
+          destacado: boolean
           es_joyeria: boolean
           id: number
           id_categoria: number
+          imagen_portada: string | null
+          marca: string | null
           nombre: string
+          precio_oferta: number | null
           precio_venta: number
+          total_disponible: number | null
         }[]
       }
       ecommerce_variantes_disponibles: {

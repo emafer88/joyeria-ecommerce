@@ -1,0 +1,171 @@
+-- ============================================================================
+-- Ecommerce: completar la ficha de producto.
+-- ============================================================================
+-- `ecommerce_producto_detalle` devolvía muy poco (id, nombre, descripcion,
+-- categoria, es_joyeria, precio_venta), así que la página de detalle no podía
+-- mostrar precio de oferta, disponibilidad ni marca. Acá se agregan esas
+-- columnas al detalle y `marca` también al listado, todo con la misma lógica
+-- de vigencia de oferta que ya usa `ecommerce_listar_productos`
+-- (ver 20260909190000_ecommerce_destacados_ofertas_banners.sql).
+--
+-- La marca sale de `productos.id_marca` -> `marca.nombre` (LEFT JOIN: un
+-- producto puede no tener marca). Nunca se expone `id_marca` crudo.
+--
+-- Postgres no permite que CREATE OR REPLACE cambie las columnas de un
+-- RETURNS TABLE existente -> hay que DROP + CREATE.
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- 1) ecommerce_listar_productos: agrega `marca`.
+-- ----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS public.ecommerce_listar_productos(integer, text, numeric, numeric, text, integer, integer);
+
+CREATE OR REPLACE FUNCTION public.ecommerce_listar_productos(
+  _id_categoria integer DEFAULT NULL,
+  _material text DEFAULT NULL,
+  _precio_min numeric DEFAULT NULL,
+  _precio_max numeric DEFAULT NULL,
+  _buscador text DEFAULT NULL,
+  _pagina integer DEFAULT 1,
+  _tam_pagina integer DEFAULT 24
+)
+RETURNS TABLE (
+  id bigint,
+  nombre text,
+  descripcion text,
+  precio_venta numeric,
+  id_categoria bigint,
+  categoria text,
+  es_joyeria boolean,
+  imagen_portada text,
+  total_disponible numeric,
+  destacado boolean,
+  precio_oferta numeric,
+  marca text,
+  total_count bigint
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  WITH base AS (
+    SELECT
+      p.id, p.nombre, p.descripcion, p.precio_venta, p.id_categoria,
+      c.nombre AS categoria, p.es_joyeria,
+      (
+        SELECT pi.url FROM producto_imagenes pi
+        WHERE pi.id_producto = p.id
+        ORDER BY pi.orden ASC LIMIT 1
+      ) AS imagen_portada,
+      CASE
+        WHEN p.es_joyeria THEN (
+          SELECT count(*)::numeric FROM piezas_inventario pz
+          WHERE pz.id_producto = p.id AND pz.estado = 'disponible'
+        )
+        WHEN p.maneja_inventarios THEN (
+          SELECT COALESCE(sum(s.stock), 0) FROM stock s
+          WHERE s.id_producto = p.id
+        )
+        ELSE NULL
+      END AS total_disponible,
+      p.destacado,
+      CASE
+        WHEN p.precio_oferta IS NOT NULL
+         AND (p.oferta_desde IS NULL OR now() >= p.oferta_desde)
+         AND (p.oferta_hasta IS NULL OR now() <= p.oferta_hasta)
+        THEN p.precio_oferta
+        ELSE NULL
+      END AS precio_oferta,
+      (SELECT m.nombre FROM marca m WHERE m.id = p.id_marca) AS marca
+    FROM productos p
+    JOIN categorias c ON c.id = p.id_categoria
+    WHERE p.id_empresa = public.ecommerce_id_empresa()
+      AND p.activo = true
+      AND (_id_categoria IS NULL OR p.id_categoria = _id_categoria)
+      AND (_precio_min IS NULL OR p.precio_venta >= _precio_min)
+      AND (_precio_max IS NULL OR p.precio_venta <= _precio_max)
+      AND (_buscador IS NULL OR p.nombre ILIKE '%' || _buscador || '%')
+      AND (
+        _material IS NULL OR EXISTS (
+          SELECT 1 FROM producto_variantes v
+          WHERE v.id_producto = p.id AND v.material ILIKE _material
+        )
+      )
+  )
+  SELECT
+    b.id, b.nombre, b.descripcion, b.precio_venta, b.id_categoria, b.categoria,
+    b.es_joyeria, b.imagen_portada, b.total_disponible, b.destacado, b.precio_oferta,
+    b.marca,
+    count(*) OVER() AS total_count
+  FROM base b
+  ORDER BY b.nombre ASC
+  LIMIT GREATEST(_tam_pagina, 1)
+  OFFSET GREATEST(_pagina - 1, 0) * GREATEST(_tam_pagina, 1);
+$$;
+
+GRANT EXECUTE ON FUNCTION public.ecommerce_listar_productos(integer, text, numeric, numeric, text, integer, integer)
+  TO anon, authenticated, service_role;
+
+
+-- ----------------------------------------------------------------------------
+-- 2) ecommerce_producto_detalle: agrega imagen_portada, total_disponible,
+--    destacado, precio_oferta (vigente) y marca.
+-- ----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS public.ecommerce_producto_detalle(integer);
+
+CREATE OR REPLACE FUNCTION public.ecommerce_producto_detalle(_id_producto integer)
+RETURNS TABLE (
+  id bigint,
+  nombre text,
+  descripcion text,
+  id_categoria bigint,
+  categoria text,
+  es_joyeria boolean,
+  precio_venta numeric,
+  imagen_portada text,
+  total_disponible numeric,
+  destacado boolean,
+  precio_oferta numeric,
+  marca text
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  SELECT
+    p.id, p.nombre, p.descripcion, p.id_categoria, c.nombre, p.es_joyeria, p.precio_venta,
+    (
+      SELECT pi.url FROM producto_imagenes pi
+      WHERE pi.id_producto = p.id
+      ORDER BY pi.orden ASC LIMIT 1
+    ) AS imagen_portada,
+    CASE
+      WHEN p.es_joyeria THEN (
+        SELECT count(*)::numeric FROM piezas_inventario pz
+        WHERE pz.id_producto = p.id AND pz.estado = 'disponible'
+      )
+      WHEN p.maneja_inventarios THEN (
+        SELECT COALESCE(sum(s.stock), 0) FROM stock s
+        WHERE s.id_producto = p.id
+      )
+      ELSE NULL
+    END AS total_disponible,
+    p.destacado,
+    CASE
+      WHEN p.precio_oferta IS NOT NULL
+       AND (p.oferta_desde IS NULL OR now() >= p.oferta_desde)
+       AND (p.oferta_hasta IS NULL OR now() <= p.oferta_hasta)
+      THEN p.precio_oferta
+      ELSE NULL
+    END AS precio_oferta,
+    (SELECT m.nombre FROM marca m WHERE m.id = p.id_marca) AS marca
+  FROM productos p
+  JOIN categorias c ON c.id = p.id_categoria
+  WHERE p.id = _id_producto
+    AND p.id_empresa = public.ecommerce_id_empresa()
+    AND p.activo = true;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.ecommerce_producto_detalle(integer) TO anon, authenticated, service_role;

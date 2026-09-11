@@ -52,6 +52,7 @@ export async function MostrarProductos(
     totalDisponible: p.total_disponible,
     destacado: p.destacado,
     precioOferta: p.precio_oferta,
+    marca: p.marca,
   }));
 
   return { items, totalCount: filas[0]?.total_count ?? 0 };
@@ -86,6 +87,11 @@ export async function MostrarProductoDetalle(
     categoria: fila.categoria,
     esJoyeria: fila.es_joyeria,
     precioVenta: fila.precio_venta,
+    imagenPortada: fila.imagen_portada,
+    totalDisponible: fila.total_disponible,
+    destacado: fila.destacado,
+    precioOferta: fila.precio_oferta,
+    marca: fila.marca,
   };
 }
 

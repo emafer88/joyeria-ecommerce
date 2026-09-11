@@ -1,6 +1,7 @@
 import styled from "styled-components";
 import { Link } from "react-router-dom";
 import type { ProductoCatalogo } from "../../types/dominio";
+import { porcentajeDescuento } from "../../utils/precio";
 import { v } from "../../styles/variables";
 
 interface Props {
@@ -11,6 +12,10 @@ export function TarjetaProducto({ producto }: Props) {
   const sinStock =
     producto.totalDisponible !== null && producto.totalDisponible <= 0;
   const enOferta = producto.precioOferta !== null;
+  const descuento = porcentajeDescuento(
+    producto.precioVenta,
+    producto.precioOferta
+  );
 
   return (
     <Container to={`/producto/${producto.id}`}>
@@ -21,10 +26,17 @@ export function TarjetaProducto({ producto }: Props) {
           <div className="sin-imagen">Sin imagen</div>
         )}
         {sinStock && <span className="badge-agotado">Agotado</span>}
-        {!sinStock && enOferta && <span className="badge-oferta">Oferta</span>}
+        {!sinStock && enOferta && (
+          <span className="badge-oferta">
+            {descuento !== null ? `-${descuento}%` : "Oferta"}
+          </span>
+        )}
       </div>
       <div className="info">
-        <span className="categoria">{producto.categoria}</span>
+        <span className="categoria">
+          {producto.categoria}
+          {producto.marca ? ` · ${producto.marca}` : ""}
+        </span>
         <h3>{producto.nombre}</h3>
         {enOferta ? (
           <span className="precios">

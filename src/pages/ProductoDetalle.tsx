@@ -11,6 +11,7 @@ import {
 } from "../tanstack/CatalogoStack";
 import { useCarritoStore } from "../store/CarritoStore";
 import { claveCarritoItem } from "../types/dominio";
+import { porcentajeDescuento } from "../utils/precio";
 import { v } from "../styles/variables";
 
 export function ProductoDetalle() {
@@ -52,6 +53,19 @@ export function ProductoDetalle() {
       </Container>
     );
 
+  const enOferta = producto.precioOferta !== null;
+  const precioEfectivo = producto.precioOferta ?? producto.precioVenta;
+  const descuento = porcentajeDescuento(
+    producto.precioVenta,
+    producto.precioOferta
+  );
+  const sinStock =
+    producto.totalDisponible !== null && producto.totalDisponible <= 0;
+  const stockBajo =
+    producto.totalDisponible !== null &&
+    producto.totalDisponible > 0 &&
+    producto.totalDisponible <= 5;
+
   return (
     <Container>
       <Link className="volver" to="/catalogo">
@@ -70,17 +84,49 @@ export function ProductoDetalle() {
         </div>
 
         <div className="info">
-          <span className="categoria">{producto.categoria}</span>
+          <span className="categoria">
+            {producto.categoria}
+            {producto.marca ? ` · ${producto.marca}` : ""}
+          </span>
           <h1>{producto.nombre}</h1>
           {producto.descripcion && <p>{producto.descripcion}</p>}
 
           {!producto.esJoyeria && (
             <>
-              <span className="precio">
-                {producto.precioVenta > 0
-                  ? `$ ${producto.precioVenta.toLocaleString()}`
-                  : "Consultar precio"}
-              </span>
+              {producto.precioVenta > 0 ? (
+                enOferta ? (
+                  <span className="precios">
+                    <span className="precio-anterior">
+                      $ {producto.precioVenta.toLocaleString()}
+                    </span>
+                    <span className="precio precio-oferta">
+                      $ {precioEfectivo.toLocaleString()}
+                    </span>
+                    {descuento !== null && (
+                      <span className="chip-descuento">-{descuento}%</span>
+                    )}
+                  </span>
+                ) : (
+                  <span className="precio">
+                    $ {producto.precioVenta.toLocaleString()}
+                  </span>
+                )
+              ) : (
+                <span className="precio">Consultar precio</span>
+              )}
+
+              {producto.totalDisponible !== null && (
+                <span
+                  className={sinStock ? "stock stock--agotado" : "stock"}
+                >
+                  {sinStock
+                    ? "Agotado"
+                    : stockBajo
+                      ? `Últimas ${producto.totalDisponible} unidades`
+                      : "Disponible"}
+                </span>
+              )}
+
               <div className="acciones-compra">
                 <input
                   type="number"
@@ -92,13 +138,13 @@ export function ProductoDetalle() {
                 />
                 <button
                   type="button"
-                  disabled={producto.precioVenta <= 0}
+                  disabled={producto.precioVenta <= 0 || sinStock}
                   onClick={() => {
                     agregarProducto(
                       {
                         idProducto: producto.id,
                         nombre: producto.nombre,
-                        precioVenta: producto.precioVenta,
+                        precioVenta: precioEfectivo,
                         imagen: imagenPortada,
                       },
                       cantidad
@@ -106,7 +152,7 @@ export function ProductoDetalle() {
                     toast.success("Agregado al carrito");
                   }}
                 >
-                  Agregar al carrito
+                  {sinStock ? "Sin stock" : "Agregar al carrito"}
                 </button>
               </div>
             </>
@@ -263,6 +309,51 @@ const Container = styled.div`
     font-weight: 700;
     color: ${v.colorPrincipal};
     margin-top: 10px;
+  }
+
+  .precios {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .precio-anterior {
+    font-size: 15px;
+    color: ${v.colorTextoSuave2};
+    text-decoration: line-through;
+  }
+
+  .precios .precio {
+    display: inline;
+    margin-top: 0;
+  }
+
+  .precio-oferta {
+    color: ${v.colorExito};
+  }
+
+  .chip-descuento {
+    align-self: center;
+    background: ${v.colorExito};
+    color: ${v.colorTexto};
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  .stock {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 13px;
+    color: ${v.colorTextoSuave};
+  }
+
+  .stock--agotado {
+    color: ${v.colorTextoSuave2};
+    font-weight: 700;
   }
 
   h2 {

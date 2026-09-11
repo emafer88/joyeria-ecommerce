@@ -25,6 +25,8 @@ export interface ProductoCatalogo {
   destacado: boolean;
   /** Precio de oferta vigente ahora mismo, o null si no hay oferta activa. */
   precioOferta: number | null;
+  /** Marca del producto (`productos.id_marca` → `marca.nombre`), o null. */
+  marca: string | null;
 }
 
 /** Banner del hero del home (admin: proyecto-joyeria → Productos → Banners). */
@@ -44,6 +46,14 @@ export interface ProductoDetalle {
   categoria: string;
   esJoyeria: boolean;
   precioVenta: number;
+  imagenPortada: string | null;
+  /** null = producto sin control de stock (se interpreta como siempre disponible). */
+  totalDisponible: number | null;
+  destacado: boolean;
+  /** Precio de oferta vigente ahora mismo, o null si no hay oferta activa. */
+  precioOferta: number | null;
+  /** Marca del producto (`productos.id_marca` → `marca.nombre`), o null. */
+  marca: string | null;
 }
 
 export interface ImagenProducto {

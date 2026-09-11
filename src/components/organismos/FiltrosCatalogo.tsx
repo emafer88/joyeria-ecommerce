@@ -3,10 +3,21 @@ import { useCategoriasQuery } from "../../tanstack/CatalogoStack";
 import { useFiltrosCatalogoStore } from "../../store/FiltrosCatalogoStore";
 import { v } from "../../styles/variables";
 
+// Materiales de joyería con los que se cargan las variantes en el POS. El RPC
+// `ecommerce_listar_productos` matchea `producto_variantes.material` con ILIKE,
+// así que alcanza con estos valores fijos (backlog: `ecommerce_listar_materiales`).
+const MATERIALES = ["Oro", "Plata", "Acero", "Fantasía"];
+
 export function FiltrosCatalogo() {
   const { data: categorias, isLoading } = useCategoriasQuery();
-  const { filtros, setCategoria, setBuscador, setRangoPrecio, limpiarFiltros } =
-    useFiltrosCatalogoStore();
+  const {
+    filtros,
+    setCategoria,
+    setMaterial,
+    setBuscador,
+    setRangoPrecio,
+    limpiarFiltros,
+  } = useFiltrosCatalogoStore();
 
   return (
     <Container>
@@ -35,6 +46,22 @@ export function FiltrosCatalogo() {
           {categorias?.map((c) => (
             <option key={c.id} value={c.id}>
               {c.nombre}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="campo">
+        <label htmlFor="material">Material</label>
+        <select
+          id="material"
+          value={filtros.material ?? ""}
+          onChange={(e) => setMaterial(e.target.value || null)}
+        >
+          <option value="">Todos</option>
+          {MATERIALES.map((m) => (
+            <option key={m} value={m}>
+              {m}
             </option>
           ))}
         </select>
