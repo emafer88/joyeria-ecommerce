@@ -92,6 +92,8 @@ export interface PiezaDisponible {
   peso: number;
   precioVenta: number;
   talla: string | null;
+  /** Precio con descuento de esta pieza puntual, o null si no hay oferta. */
+  precioOferta: number | null;
 }
 
 /** Filtros del catálogo, atados 1:1 a los parámetros de `ecommerce_listar_productos`. */

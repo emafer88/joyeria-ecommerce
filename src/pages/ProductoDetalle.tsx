@@ -254,12 +254,31 @@ export function ProductoDetalle() {
                         const yaEnCarrito = items.some(
                           (i) => claveCarritoItem(i) === clave
                         );
+                        const precioEfectivoPieza =
+                          p.precioOferta ?? p.precioVenta;
+                        const descuentoPieza = porcentajeDescuento(
+                          p.precioVenta,
+                          p.precioOferta
+                        );
                         return (
                           <li key={p.idPieza}>
                             <span>
                               SKU {p.sku} — {p.peso} g
-                              {p.talla ? ` — talla ${p.talla}` : ""} — $
-                              {p.precioVenta.toLocaleString()}
+                              {p.talla ? ` — talla ${p.talla}` : ""} —{" "}
+                              {p.precioOferta !== null ? (
+                                <>
+                                  <span className="precio-anterior">
+                                    ${p.precioVenta.toLocaleString()}
+                                  </span>{" "}
+                                  <span className="precio-oferta">
+                                    ${precioEfectivoPieza.toLocaleString()}
+                                  </span>
+                                  {descuentoPieza !== null &&
+                                    ` (-${descuentoPieza}%)`}
+                                </>
+                              ) : (
+                                `$${p.precioVenta.toLocaleString()}`
+                              )}
                             </span>
                             <button
                               type="button"
@@ -273,7 +292,7 @@ export function ProductoDetalle() {
                                   nombre: producto.nombre,
                                   material: varianteElegida.material,
                                   pureza: varianteElegida.pureza,
-                                  precioVenta: p.precioVenta,
+                                  precioVenta: precioEfectivoPieza,
                                   imagen: imagenPortada,
                                 });
                                 toast.success("Agregado al carrito");

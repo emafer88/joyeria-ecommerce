@@ -1977,6 +1977,7 @@ export type Database = {
         Returns: {
           id_pieza: number
           peso: number
+          precio_oferta: number | null
           precio_venta: number
           sku: string
           talla: string | null

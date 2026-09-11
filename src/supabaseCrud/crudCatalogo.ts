@@ -159,5 +159,6 @@ export async function MostrarPiezasDisponibles(
     peso: p.peso,
     precioVenta: p.precio_venta,
     talla: p.talla,
+    precioOferta: p.precio_oferta,
   }));
 }

@@ -213,7 +213,7 @@ Deno.serve(async (req) => {
     if (item.tipo === "pieza") {
       const { data: pieza } = await supabaseAdmin
         .from("piezas_inventario")
-        .select("id, id_producto, precio_venta, costo, estado, productos(nombre)")
+        .select("id, id_producto, precio_venta, precio_oferta, costo, estado, productos(nombre)")
         .eq("id", item.idPieza)
         .eq("id_empresa", ID_EMPRESA)
         .maybeSingle();
@@ -222,12 +222,16 @@ Deno.serve(async (req) => {
         fallidas.push(`pieza:${item.idPieza}`);
         continue;
       }
+      // El precio con oferta (si hay) es el que se cobra y el que
+      // crear_venta_externa_piezas vuelve a leer al confirmar el pago
+      // (ver 20260910150000_oferta_pieza_y_ficha_joyeria.sql) — nunca el
+      // precio que mandó el navegador.
       lineas.push({
         idProducto: pieza.id_producto,
         // @ts-ignore -- select anidado de supabase-js
         nombre: pieza.productos?.nombre ?? "Pieza de joyería",
         cantidad: 1,
-        precioVenta: pieza.precio_venta,
+        precioVenta: pieza.precio_oferta ?? pieza.precio_venta,
         precioCompra: pieza.costo,
         idPieza: pieza.id,
       });
