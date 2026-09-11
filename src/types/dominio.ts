@@ -10,6 +10,11 @@ export interface CategoriaCatalogo {
   color: string | null;
 }
 
+export interface EtiquetaCatalogo {
+  id: number;
+  nombre: string;
+}
+
 export interface ProductoCatalogo {
   id: number;
   nombre: string;
@@ -25,6 +30,10 @@ export interface ProductoCatalogo {
   destacado: boolean;
   /** Precio de oferta vigente ahora mismo, o null si no hay oferta activa. */
   precioOferta: number | null;
+  /** Marca del producto (`productos.id_marca` → `marca.nombre`), o null. */
+  marca: string | null;
+  /** Etiquetas/tags del producto (nombres, ya ordenados). */
+  etiquetas: string[];
 }
 
 /** Banner del hero del home (admin: proyecto-joyeria → Productos → Banners). */
@@ -44,6 +53,20 @@ export interface ProductoDetalle {
   categoria: string;
   esJoyeria: boolean;
   precioVenta: number;
+  imagenPortada: string | null;
+  /** null = producto sin control de stock (se interpreta como siempre disponible). */
+  totalDisponible: number | null;
+  destacado: boolean;
+  /** Precio de oferta vigente ahora mismo, o null si no hay oferta activa. */
+  precioOferta: number | null;
+  /** Marca del producto (`productos.id_marca` → `marca.nombre`), o null. */
+  marca: string | null;
+  /** Medidas/dimensiones, texto libre. */
+  medidas: string | null;
+  /** Tallas disponibles (texto libre) para productos no serializados. */
+  tallas: string | null;
+  /** Etiquetas/tags del producto (nombres, ya ordenados). */
+  etiquetas: string[];
 }
 
 export interface ImagenProducto {
@@ -59,6 +82,8 @@ export interface VarianteDisponible {
   precioVentaSugerido: number | null;
   imagenPortada: string | null;
   piezasDisponibles: number;
+  /** Tallas distintas entre las piezas disponibles de esta variante. */
+  tallasDisponibles: string[];
 }
 
 export interface PiezaDisponible {
@@ -66,12 +91,20 @@ export interface PiezaDisponible {
   sku: string;
   peso: number;
   precioVenta: number;
+  talla: string | null;
+  /** Medidas de esta pieza física puntual (ej. "45 cm"), o null. */
+  medidas: string | null;
+  /** Precio con descuento de esta pieza puntual, o null si no hay oferta. */
+  precioOferta: number | null;
+  /** Agrupa piezas físicamente iguales (mismo peso+talla+medidas) de la variante. */
+  idGrupo: number;
 }
 
 /** Filtros del catálogo, atados 1:1 a los parámetros de `ecommerce_listar_productos`. */
 export interface FiltrosCatalogo {
   idCategoria: number | null;
   material: string | null;
+  idEtiqueta: number | null;
   precioMin: number | null;
   precioMax: number | null;
   buscador: string | null;

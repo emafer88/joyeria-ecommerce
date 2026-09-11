@@ -11,6 +11,7 @@ import {
 } from "../tanstack/CatalogoStack";
 import { useCarritoStore } from "../store/CarritoStore";
 import { claveCarritoItem } from "../types/dominio";
+import { porcentajeDescuento } from "../utils/precio";
 import { v } from "../styles/variables";
 
 export function ProductoDetalle() {
@@ -18,6 +19,22 @@ export function ProductoDetalle() {
   const idProducto = id ? Number(id) : undefined;
   const [idVarianteElegida, setIdVarianteElegida] = useState<number>();
   const [cantidad, setCantidad] = useState(1);
+
+  // Filtros sobre las piezas de la variante elegida — solo por características
+  // físicas (peso/medida/talla), no por precio: el precio puede variar dentro
+  // de un mismo grupo de piezas iguales (oferta puntual) y no es un criterio
+  // para decidir qué pieza física querés.
+  const [filtroTalla, setFiltroTalla] = useState<string>();
+  const [filtroMedidas, setFiltroMedidas] = useState<string>();
+  const [filtroPesoMin, setFiltroPesoMin] = useState<number>();
+  const [filtroPesoMax, setFiltroPesoMax] = useState<number>();
+
+  function limpiarFiltrosPiezas() {
+    setFiltroTalla(undefined);
+    setFiltroMedidas(undefined);
+    setFiltroPesoMin(undefined);
+    setFiltroPesoMax(undefined);
+  }
 
   const { data: producto, isLoading, isError } =
     useProductoDetalleQuery(idProducto);
@@ -37,6 +54,63 @@ export function ProductoDetalle() {
   const varianteElegida = variantes?.find(
     (v) => v.idVariante === idVarianteElegida
   );
+
+  // Opciones de filtro: solo lo que realmente aparece entre las piezas de
+  // esta variante (nunca una lista fija), y solo si hay más de un valor —
+  // filtrar por talla cuando todas son iguales no aporta nada.
+  const piezasDeVariante = piezas ?? [];
+  const tallasEnPiezas = Array.from(
+    new Set(piezasDeVariante.map((p) => p.talla).filter((t): t is string => !!t))
+  ).sort();
+  const medidasEnPiezas = Array.from(
+    new Set(piezasDeVariante.map((p) => p.medidas).filter((m): m is string => !!m))
+  ).sort();
+  const pesos = piezasDeVariante.map((p) => p.peso);
+  const pesoMinDisp = pesos.length ? Math.min(...pesos) : null;
+  const pesoMaxDisp = pesos.length ? Math.max(...pesos) : null;
+
+  const piezasVisibles = piezasDeVariante.filter((p) => {
+    if (filtroTalla && p.talla !== filtroTalla) return false;
+    if (filtroMedidas && p.medidas !== filtroMedidas) return false;
+    if (filtroPesoMin !== undefined && p.peso < filtroPesoMin) return false;
+    if (filtroPesoMax !== undefined && p.peso > filtroPesoMax) return false;
+    return true;
+  });
+  const hayFiltrosPiezasActivos =
+    !!filtroTalla ||
+    !!filtroMedidas ||
+    filtroPesoMin !== undefined ||
+    filtroPesoMax !== undefined;
+
+  // Piezas físicamente iguales (mismo id_grupo, viene de peso+talla+medidas)
+  // se muestran una sola vez: el cliente ve una tarjeta por grupo y usa
+  // "+ Sumar otra igual" para llevarse más de una con distinto SKU.
+  const gruposVisibles = Object.values(
+    piezasVisibles.reduce<Record<number, typeof piezasVisibles>>((acc, p) => {
+      (acc[p.idGrupo] ??= []).push(p);
+      return acc;
+    }, {})
+  ).map((piezasGrupo) => {
+    const ordenadas = [...piezasGrupo].sort(
+      (a, b) => (a.precioOferta ?? a.precioVenta) - (b.precioOferta ?? b.precioVenta)
+    );
+    const enCarrito = ordenadas.filter((p) =>
+      items.some((i) => claveCarritoItem(i) === `pieza:${p.idPieza}`)
+    );
+    const siguiente = ordenadas.find(
+      (p) => !items.some((i) => claveCarritoItem(i) === `pieza:${p.idPieza}`)
+    );
+    const precios = ordenadas.map((p) => p.precioOferta ?? p.precioVenta);
+    return {
+      idGrupo: ordenadas[0].idGrupo,
+      representante: ordenadas[0],
+      enCarrito,
+      siguiente,
+      precioMin: Math.min(...precios),
+      precioMax: Math.max(...precios),
+      hayOferta: ordenadas.some((p) => p.precioOferta !== null),
+    };
+  });
   // Al elegir un material, la galería pasa a ser la de esa variante; si la
   // variante no tiene imágenes cargadas se cae a las del producto.
   const galeria =
@@ -51,6 +125,19 @@ export function ProductoDetalle() {
         <Link to="/catalogo">Volver al catálogo</Link>
       </Container>
     );
+
+  const enOferta = producto.precioOferta !== null;
+  const precioEfectivo = producto.precioOferta ?? producto.precioVenta;
+  const descuento = porcentajeDescuento(
+    producto.precioVenta,
+    producto.precioOferta
+  );
+  const sinStock =
+    producto.totalDisponible !== null && producto.totalDisponible <= 0;
+  const stockBajo =
+    producto.totalDisponible !== null &&
+    producto.totalDisponible > 0 &&
+    producto.totalDisponible <= 5;
 
   return (
     <Container>
@@ -70,17 +157,75 @@ export function ProductoDetalle() {
         </div>
 
         <div className="info">
-          <span className="categoria">{producto.categoria}</span>
+          <span className="categoria">
+            {producto.categoria}
+            {producto.marca ? ` · ${producto.marca}` : ""}
+          </span>
           <h1>{producto.nombre}</h1>
+          {producto.etiquetas.length > 0 && (
+            <span className="etiquetas">
+              {producto.etiquetas.map((et) => (
+                <span key={et} className="etiqueta">
+                  {et}
+                </span>
+              ))}
+            </span>
+          )}
           {producto.descripcion && <p>{producto.descripcion}</p>}
+
+          {(producto.medidas || producto.tallas) && (
+            <dl className="ficha">
+              {producto.medidas && (
+                <div>
+                  <dt>Medidas</dt>
+                  <dd>{producto.medidas}</dd>
+                </div>
+              )}
+              {producto.tallas && (
+                <div>
+                  <dt>Tallas</dt>
+                  <dd>{producto.tallas}</dd>
+                </div>
+              )}
+            </dl>
+          )}
 
           {!producto.esJoyeria && (
             <>
-              <span className="precio">
-                {producto.precioVenta > 0
-                  ? `$ ${producto.precioVenta.toLocaleString()}`
-                  : "Consultar precio"}
-              </span>
+              {producto.precioVenta > 0 ? (
+                enOferta ? (
+                  <span className="precios">
+                    <span className="precio-anterior">
+                      $ {producto.precioVenta.toLocaleString()}
+                    </span>
+                    <span className="precio precio-oferta">
+                      $ {precioEfectivo.toLocaleString()}
+                    </span>
+                    {descuento !== null && (
+                      <span className="chip-descuento">-{descuento}%</span>
+                    )}
+                  </span>
+                ) : (
+                  <span className="precio">
+                    $ {producto.precioVenta.toLocaleString()}
+                  </span>
+                )
+              ) : (
+                <span className="precio">Consultar precio</span>
+              )}
+
+              {producto.totalDisponible !== null && (
+                <span
+                  className={sinStock ? "stock stock--agotado" : "stock"}
+                >
+                  {sinStock
+                    ? "Agotado"
+                    : stockBajo
+                      ? `Últimas ${producto.totalDisponible} unidades`
+                      : "Disponible"}
+                </span>
+              )}
+
               <div className="acciones-compra">
                 <input
                   type="number"
@@ -92,13 +237,13 @@ export function ProductoDetalle() {
                 />
                 <button
                   type="button"
-                  disabled={producto.precioVenta <= 0}
+                  disabled={producto.precioVenta <= 0 || sinStock}
                   onClick={() => {
                     agregarProducto(
                       {
                         idProducto: producto.id,
                         nombre: producto.nombre,
-                        precioVenta: producto.precioVenta,
+                        precioVenta: precioEfectivo,
                         imagen: imagenPortada,
                       },
                       cantidad
@@ -106,7 +251,7 @@ export function ProductoDetalle() {
                     toast.success("Agregado al carrito");
                   }}
                 >
-                  Agregar al carrito
+                  {sinStock ? "Sin stock" : "Agregar al carrito"}
                 </button>
               </div>
             </>
@@ -124,7 +269,10 @@ export function ProductoDetalle() {
                       v.idVariante === idVarianteElegida ? "activa" : ""
                     }
                     disabled={v.piezasDisponibles === 0}
-                    onClick={() => setIdVarianteElegida(v.idVariante)}
+                    onClick={() => {
+                      setIdVarianteElegida(v.idVariante);
+                      limpiarFiltrosPiezas();
+                    }}
                   >
                     {v.material}
                     {v.pureza ? ` (${v.pureza})` : ""}
@@ -136,50 +284,198 @@ export function ProductoDetalle() {
                 )}
               </div>
 
+              {idVarianteElegida &&
+                !piezasCargando &&
+                (tallasEnPiezas.length > 1 ||
+                  medidasEnPiezas.length > 1 ||
+                  pesoMinDisp !== pesoMaxDisp) && (
+                  <div className="filtros-piezas">
+                    <div className="filtros-piezas__header">
+                      <h2>Filtrar piezas</h2>
+                      {hayFiltrosPiezasActivos && (
+                        <button
+                          type="button"
+                          className="limpiar"
+                          onClick={limpiarFiltrosPiezas}
+                        >
+                          Limpiar filtros
+                        </button>
+                      )}
+                    </div>
+
+                    {tallasEnPiezas.length > 1 && (
+                      <div className="campo">
+                        <label>Talla</label>
+                        <div className="lista-variantes">
+                          <button
+                            type="button"
+                            className={!filtroTalla ? "activa" : ""}
+                            onClick={() => setFiltroTalla(undefined)}
+                          >
+                            Todas
+                          </button>
+                          {tallasEnPiezas.map((t) => (
+                            <button
+                              key={t}
+                              type="button"
+                              className={t === filtroTalla ? "activa" : ""}
+                              onClick={() => setFiltroTalla(t)}
+                            >
+                              {t}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {medidasEnPiezas.length > 1 && (
+                      <div className="campo">
+                        <label>Medidas</label>
+                        <div className="lista-variantes">
+                          <button
+                            type="button"
+                            className={!filtroMedidas ? "activa" : ""}
+                            onClick={() => setFiltroMedidas(undefined)}
+                          >
+                            Todas
+                          </button>
+                          {medidasEnPiezas.map((m) => (
+                            <button
+                              key={m}
+                              type="button"
+                              className={m === filtroMedidas ? "activa" : ""}
+                              onClick={() => setFiltroMedidas(m)}
+                            >
+                              {m}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {pesoMinDisp !== null &&
+                      pesoMaxDisp !== null &&
+                      pesoMinDisp !== pesoMaxDisp && (
+                        <div className="campo">
+                          <label>
+                            Peso (g): {pesoMinDisp} – {pesoMaxDisp}
+                          </label>
+                          <div className="rango">
+                            <input
+                              type="number"
+                              step="0.001"
+                              placeholder={String(pesoMinDisp)}
+                              value={filtroPesoMin ?? ""}
+                              onChange={(e) =>
+                                setFiltroPesoMin(
+                                  e.target.value ? Number(e.target.value) : undefined
+                                )
+                              }
+                            />
+                            <span>-</span>
+                            <input
+                              type="number"
+                              step="0.001"
+                              placeholder={String(pesoMaxDisp)}
+                              value={filtroPesoMax ?? ""}
+                              onChange={(e) =>
+                                setFiltroPesoMax(
+                                  e.target.value ? Number(e.target.value) : undefined
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                  </div>
+                )}
+
               {idVarianteElegida && (
                 <div className="piezas">
-                  <h2>Piezas disponibles</h2>
+                  <h2>
+                    Piezas disponibles
+                    {!piezasCargando &&
+                      hayFiltrosPiezasActivos &&
+                      ` (${gruposVisibles.length} de ${piezasDeVariante.length})`}
+                  </h2>
                   {piezasCargando ? (
                     <p>Cargando piezas...</p>
-                  ) : piezas && piezas.length > 0 ? (
+                  ) : gruposVisibles.length > 0 ? (
                     <ul>
-                      {piezas.map((p) => {
-                        const clave = `pieza:${p.idPieza}`;
-                        const yaEnCarrito = items.some(
-                          (i) => claveCarritoItem(i) === clave
-                        );
+                      {gruposVisibles.map((g) => {
+                        const { representante } = g;
+                        const descuento =
+                          g.precioMin === g.precioMax && g.hayOferta
+                            ? porcentajeDescuento(
+                                representante.precioVenta,
+                                representante.precioOferta
+                              )
+                            : null;
                         return (
-                          <li key={p.idPieza}>
+                          <li key={g.idGrupo}>
                             <span>
-                              SKU {p.sku} — {p.peso} g — $
-                              {p.precioVenta.toLocaleString()}
+                              {representante.peso} g
+                              {representante.talla
+                                ? ` — talla ${representante.talla}`
+                                : ""}
+                              {representante.medidas
+                                ? ` — ${representante.medidas}`
+                                : ""} —{" "}
+                              {g.precioMin !== g.precioMax ? (
+                                `desde $${g.precioMin.toLocaleString()}`
+                              ) : g.hayOferta ? (
+                                <>
+                                  <span className="precio-anterior">
+                                    ${representante.precioVenta.toLocaleString()}
+                                  </span>{" "}
+                                  <span className="precio-oferta">
+                                    ${g.precioMin.toLocaleString()}
+                                  </span>
+                                  {descuento !== null && ` (-${descuento}%)`}
+                                </>
+                              ) : (
+                                `$${g.precioMin.toLocaleString()}`
+                              )}
+                              {g.enCarrito.length > 0 &&
+                                ` — ${g.enCarrito.length} en el carrito`}
                             </span>
                             <button
                               type="button"
-                              disabled={yaEnCarrito || !varianteElegida}
+                              disabled={!g.siguiente || !varianteElegida}
                               onClick={() => {
-                                if (!varianteElegida) return;
+                                if (!g.siguiente || !varianteElegida) return;
+                                const precioEfectivo =
+                                  g.siguiente.precioOferta ?? g.siguiente.precioVenta;
                                 agregarPieza({
-                                  idPieza: p.idPieza,
+                                  idPieza: g.siguiente.idPieza,
                                   idProducto: producto.id,
                                   idVariante: varianteElegida.idVariante,
                                   nombre: producto.nombre,
                                   material: varianteElegida.material,
                                   pureza: varianteElegida.pureza,
-                                  precioVenta: p.precioVenta,
+                                  precioVenta: precioEfectivo,
                                   imagen: imagenPortada,
                                 });
                                 toast.success("Agregado al carrito");
                               }}
                             >
-                              {yaEnCarrito ? "En el carrito" : "Agregar"}
+                              {g.enCarrito.length === 0
+                                ? "Agregar"
+                                : g.siguiente
+                                  ? "+ Sumar otra igual"
+                                  : "Sin más unidades"}
                             </button>
                           </li>
                         );
                       })}
                     </ul>
                   ) : (
-                    <p>No hay piezas disponibles en esta variante.</p>
+                    <p>
+                      {hayFiltrosPiezasActivos
+                        ? "No hay piezas que coincidan con los filtros."
+                        : "No hay piezas disponibles en esta variante."}
+                    </p>
                   )}
                 </div>
               )}
@@ -257,12 +553,93 @@ const Container = styled.div`
     line-height: 1.5;
   }
 
+  .etiquetas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0 4px;
+  }
+
+  .etiqueta {
+    font-size: 11.5px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    border: 1px solid ${v.borderSutil};
+    color: ${v.colorTextoSuave};
+  }
+
+  .ficha {
+    margin: 16px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    div {
+      display: flex;
+      gap: 8px;
+      font-size: 13.5px;
+    }
+    dt {
+      color: ${v.colorTextoSuave2};
+      min-width: 72px;
+    }
+    dd {
+      margin: 0;
+      color: ${v.colorTexto};
+    }
+  }
+
   .precio {
     display: block;
     font-size: 24px;
     font-weight: 700;
     color: ${v.colorPrincipal};
     margin-top: 10px;
+  }
+
+  .precios {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .precio-anterior {
+    font-size: 15px;
+    color: ${v.colorTextoSuave2};
+    text-decoration: line-through;
+  }
+
+  .precios .precio {
+    display: inline;
+    margin-top: 0;
+  }
+
+  .precio-oferta {
+    color: ${v.colorExito};
+  }
+
+  .chip-descuento {
+    align-self: center;
+    background: ${v.colorExito};
+    color: ${v.colorTexto};
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  .stock {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 13px;
+    color: ${v.colorTextoSuave};
+  }
+
+  .stock--agotado {
+    color: ${v.colorTextoSuave2};
+    font-weight: 700;
   }
 
   h2 {
@@ -298,6 +675,74 @@ const Container = styled.div`
 
   .lista-variantes button:disabled {
     text-decoration: line-through;
+  }
+
+  .filtros-piezas {
+    margin-top: 22px;
+    padding: 14px 16px;
+    border: 1px solid ${v.borderSutil};
+    border-radius: 10px;
+    background: ${v.bgTarjeta};
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    &__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      h2 {
+        margin: 0;
+      }
+    }
+
+    h2 {
+      margin: 0;
+    }
+
+    .limpiar {
+      background: none;
+      border: none;
+      color: ${v.colorTextoSuave};
+      font-size: 12.5px;
+      cursor: pointer;
+      text-decoration: underline;
+      &:hover {
+        color: ${v.colorPrincipal};
+      }
+    }
+
+    .campo {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      label {
+        font-size: 12px;
+        color: ${v.colorTextoSuave};
+      }
+    }
+
+    .campo .lista-variantes button {
+      padding: 5px 12px;
+      font-size: 12.5px;
+    }
+
+    .rango {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: ${v.colorTextoSuave2};
+      input {
+        width: 90px;
+        padding: 7px 9px;
+        border-radius: 8px;
+        border: 1px solid ${v.borderSutil};
+        background: rgba(255, 255, 255, 0.03);
+        color: ${v.colorTexto};
+        font-family: inherit;
+        font-size: 13px;
+      }
+    }
   }
 
   .piezas ul {

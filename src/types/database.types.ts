@@ -1926,10 +1926,18 @@ export type Database = {
           nombre: string
         }[]
       }
+      ecommerce_listar_etiquetas: {
+        Args: never
+        Returns: {
+          id: number
+          nombre: string
+        }[]
+      }
       ecommerce_listar_productos: {
         Args: {
           _buscador?: string
           _id_categoria?: number
+          _id_etiqueta?: number
           _material?: string
           _pagina?: number
           _precio_max?: number
@@ -1941,9 +1949,11 @@ export type Database = {
           descripcion: string
           destacado: boolean
           es_joyeria: boolean
+          etiquetas: string[]
           id: number
           id_categoria: number
           imagen_portada: string
+          marca: string | null
           nombre: string
           precio_oferta: number | null
           precio_venta: number
@@ -1965,10 +1975,14 @@ export type Database = {
       ecommerce_piezas_disponibles: {
         Args: { _id_variante: number }
         Returns: {
+          id_grupo: number
           id_pieza: number
+          medidas: string | null
           peso: number
+          precio_oferta: number | null
           precio_venta: number
           sku: string
+          talla: string | null
         }[]
       }
       ecommerce_producto_detalle: {
@@ -1976,11 +1990,19 @@ export type Database = {
         Returns: {
           categoria: string
           descripcion: string
+          destacado: boolean
           es_joyeria: boolean
+          etiquetas: string[]
           id: number
           id_categoria: number
+          imagen_portada: string | null
+          marca: string | null
+          medidas: string | null
           nombre: string
+          precio_oferta: number | null
           precio_venta: number
+          tallas: string | null
+          total_disponible: number | null
         }[]
       }
       ecommerce_variantes_disponibles: {
@@ -1992,6 +2014,7 @@ export type Database = {
           piezas_disponibles: number
           precio_venta_sugerido: number
           pureza: string
+          tallas_disponibles: string[]
         }[]
       }
       ecommerce_vincular_cliente: {
@@ -2266,18 +2289,25 @@ export type Database = {
           categoria: string
           codigo_barras: string
           codigo_interno: string
+          destacado: boolean
           id: number
           id_categoria: number
           id_empresa: number
+          id_marca: number | null
           imagen_portada: string
           maneja_inventarios: boolean
           maneja_multiprecios: boolean
+          medidas: string | null
           nombre: string
+          oferta_desde: string | null
+          oferta_hasta: string | null
           p_compra: string
           p_venta: string
           precio_compra: number
+          precio_oferta: number | null
           precio_venta: number
           sevende_por: string
+          tallas: string | null
         }[]
       }
       mostrarsucursalesasignadas: {

@@ -17,6 +17,7 @@ import type { FiltrosCatalogo } from "../types/dominio";
 const FILTROS_VITRINA: FiltrosCatalogo = {
   idCategoria: null,
   material: null,
+  idEtiqueta: null,
   precioMin: null,
   precioMax: null,
   buscador: null,

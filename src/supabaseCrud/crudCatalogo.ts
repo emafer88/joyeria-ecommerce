@@ -5,6 +5,7 @@ import { supabase } from "./supabase.config";
 import type {
   Banner,
   CategoriaCatalogo,
+  EtiquetaCatalogo,
   FiltrosCatalogo,
   ImagenProducto,
   PaginaProductos,
@@ -25,12 +26,19 @@ export async function MostrarCategorias(): Promise<CategoriaCatalogo[]> {
   }));
 }
 
+export async function MostrarEtiquetas(): Promise<EtiquetaCatalogo[]> {
+  const { data, error } = await supabase.rpc("ecommerce_listar_etiquetas");
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((e) => ({ id: e.id, nombre: e.nombre }));
+}
+
 export async function MostrarProductos(
   filtros: FiltrosCatalogo
 ): Promise<PaginaProductos> {
   const { data, error } = await supabase.rpc("ecommerce_listar_productos", {
     _id_categoria: filtros.idCategoria ?? undefined,
     _material: filtros.material ?? undefined,
+    _id_etiqueta: filtros.idEtiqueta ?? undefined,
     _precio_min: filtros.precioMin ?? undefined,
     _precio_max: filtros.precioMax ?? undefined,
     _buscador: filtros.buscador ?? undefined,
@@ -52,6 +60,8 @@ export async function MostrarProductos(
     totalDisponible: p.total_disponible,
     destacado: p.destacado,
     precioOferta: p.precio_oferta,
+    marca: p.marca,
+    etiquetas: p.etiquetas ?? [],
   }));
 
   return { items, totalCount: filas[0]?.total_count ?? 0 };
@@ -86,6 +96,14 @@ export async function MostrarProductoDetalle(
     categoria: fila.categoria,
     esJoyeria: fila.es_joyeria,
     precioVenta: fila.precio_venta,
+    imagenPortada: fila.imagen_portada,
+    totalDisponible: fila.total_disponible,
+    destacado: fila.destacado,
+    precioOferta: fila.precio_oferta,
+    marca: fila.marca,
+    medidas: fila.medidas,
+    tallas: fila.tallas,
+    etiquetas: fila.etiquetas ?? [],
   };
 }
 
@@ -124,6 +142,7 @@ export async function MostrarVariantesDisponibles(
     precioVentaSugerido: v.precio_venta_sugerido,
     imagenPortada: v.imagen_portada,
     piezasDisponibles: v.piezas_disponibles,
+    tallasDisponibles: v.tallas_disponibles ?? [],
   }));
 }
 
@@ -139,5 +158,9 @@ export async function MostrarPiezasDisponibles(
     sku: p.sku,
     peso: p.peso,
     precioVenta: p.precio_venta,
+    talla: p.talla,
+    medidas: p.medidas,
+    precioOferta: p.precio_oferta,
+    idGrupo: p.id_grupo,
   }));
 }
