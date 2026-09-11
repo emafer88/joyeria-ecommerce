@@ -2286,18 +2286,25 @@ export type Database = {
           categoria: string
           codigo_barras: string
           codigo_interno: string
+          destacado: boolean
           id: number
           id_categoria: number
           id_empresa: number
+          id_marca: number | null
           imagen_portada: string
           maneja_inventarios: boolean
           maneja_multiprecios: boolean
+          medidas: string | null
           nombre: string
+          oferta_desde: string | null
+          oferta_hasta: string | null
           p_compra: string
           p_venta: string
           precio_compra: number
+          precio_oferta: number | null
           precio_venta: number
           sevende_por: string
+          tallas: string | null
         }[]
       }
       mostrarsucursalesasignadas: {

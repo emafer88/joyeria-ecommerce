@@ -516,3 +516,59 @@ AS $$
 $$;
 
 GRANT EXECUTE ON FUNCTION public.ecommerce_piezas_disponibles(bigint) TO anon, authenticated, service_role;
+
+
+-- ----------------------------------------------------------------------------
+-- 6) Admin: mostrarproductos suma las columnas que el form de edición
+--    necesita para prellenar (destacado / oferta ya faltaban desde
+--    20260909180000; ahora también id_marca / medidas / tallas).
+-- ----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS public.mostrarproductos(integer);
+
+CREATE FUNCTION public.mostrarproductos (
+  _id_empresa integer
+)
+  RETURNS TABLE (
+    id                  integer,
+    nombre              text,
+    precio_venta        numeric,
+    precio_compra       numeric,
+    id_categoria        integer,
+    sevende_por         text,
+    codigo_barras       text,
+    codigo_interno      text,
+    id_empresa          integer,
+    maneja_inventarios  boolean,
+    maneja_multiprecios boolean,
+    p_venta             text,
+    p_compra            text,
+    categoria           text,
+    imagen_portada      text,
+    destacado           boolean,
+    precio_oferta       numeric,
+    oferta_desde        timestamp with time zone,
+    oferta_hasta        timestamp with time zone,
+    id_marca            bigint,
+    medidas             text,
+    tallas              text
+  )
+  LANGUAGE sql
+  AS $function$
+select p.id,
+ p.nombre, p.precio_venta, p.precio_compra, p.id_categoria, p.sevende_por,
+ p.codigo_barras, p.codigo_interno, p.id_empresa, p.maneja_inventarios,
+ p.maneja_multiprecios,
+ concat(e.simbolo_moneda, ' ', p.precio_venta) as p_venta,
+ concat(e.simbolo_moneda, ' ', p.precio_compra) as p_compra,
+ c.nombre as categoria,
+ (select pi.url from producto_imagenes pi
+   where pi.id_producto = p.id order by pi.orden asc limit 1) as imagen_portada,
+ p.destacado, p.precio_oferta, p.oferta_desde, p.oferta_hasta,
+ p.id_marca, p.medidas, p.tallas
+  from productos as p inner join empresa as e on e.id = p.id_empresa
+  inner join categorias as c on c.id = p.id_categoria
+  where p.id_empresa = _id_empresa and p.activo;
+$function$;
+
+GRANT EXECUTE ON FUNCTION public.mostrarproductos(integer)
+  TO PUBLIC, anon, authenticated, postgres, service_role;
