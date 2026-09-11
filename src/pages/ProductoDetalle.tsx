@@ -18,8 +18,27 @@ export function ProductoDetalle() {
   const { id } = useParams<{ id: string }>();
   const idProducto = id ? Number(id) : undefined;
   const [idVarianteElegida, setIdVarianteElegida] = useState<number>();
-  const [tallaElegida, setTallaElegida] = useState<string>();
   const [cantidad, setCantidad] = useState(1);
+
+  // Filtros sobre las piezas de la variante elegida — se arman con lo que
+  // realmente hay entre las piezas cargadas, no son categorías fijas.
+  const [filtroTalla, setFiltroTalla] = useState<string>();
+  const [filtroMedidas, setFiltroMedidas] = useState<string>();
+  const [filtroPesoMin, setFiltroPesoMin] = useState<number>();
+  const [filtroPesoMax, setFiltroPesoMax] = useState<number>();
+  const [filtroPrecioMin, setFiltroPrecioMin] = useState<number>();
+  const [filtroPrecioMax, setFiltroPrecioMax] = useState<number>();
+  const [soloOferta, setSoloOferta] = useState(false);
+
+  function limpiarFiltrosPiezas() {
+    setFiltroTalla(undefined);
+    setFiltroMedidas(undefined);
+    setFiltroPesoMin(undefined);
+    setFiltroPesoMax(undefined);
+    setFiltroPrecioMin(undefined);
+    setFiltroPrecioMax(undefined);
+    setSoloOferta(false);
+  }
 
   const { data: producto, isLoading, isError } =
     useProductoDetalleQuery(idProducto);
@@ -39,11 +58,44 @@ export function ProductoDetalle() {
   const varianteElegida = variantes?.find(
     (v) => v.idVariante === idVarianteElegida
   );
-  const tallas = varianteElegida?.tallasDisponibles ?? [];
-  const piezasVisibles =
-    tallaElegida && tallas.length > 0
-      ? piezas?.filter((p) => p.talla === tallaElegida)
-      : piezas;
+
+  // Opciones de filtro: solo lo que realmente aparece entre las piezas de
+  // esta variante (nunca una lista fija), y solo si hay más de un valor —
+  // filtrar por talla cuando todas son iguales no aporta nada.
+  const piezasDeVariante = piezas ?? [];
+  const tallasEnPiezas = Array.from(
+    new Set(piezasDeVariante.map((p) => p.talla).filter((t): t is string => !!t))
+  ).sort();
+  const medidasEnPiezas = Array.from(
+    new Set(piezasDeVariante.map((p) => p.medidas).filter((m): m is string => !!m))
+  ).sort();
+  const pesos = piezasDeVariante.map((p) => p.peso);
+  const pesoMinDisp = pesos.length ? Math.min(...pesos) : null;
+  const pesoMaxDisp = pesos.length ? Math.max(...pesos) : null;
+  const preciosEfectivos = piezasDeVariante.map((p) => p.precioOferta ?? p.precioVenta);
+  const precioMinDisp = preciosEfectivos.length ? Math.min(...preciosEfectivos) : null;
+  const precioMaxDisp = preciosEfectivos.length ? Math.max(...preciosEfectivos) : null;
+  const hayOfertasEnVariante = piezasDeVariante.some((p) => p.precioOferta !== null);
+
+  const piezasVisibles = piezasDeVariante.filter((p) => {
+    if (filtroTalla && p.talla !== filtroTalla) return false;
+    if (filtroMedidas && p.medidas !== filtroMedidas) return false;
+    if (filtroPesoMin !== undefined && p.peso < filtroPesoMin) return false;
+    if (filtroPesoMax !== undefined && p.peso > filtroPesoMax) return false;
+    const precioEfectivo = p.precioOferta ?? p.precioVenta;
+    if (filtroPrecioMin !== undefined && precioEfectivo < filtroPrecioMin) return false;
+    if (filtroPrecioMax !== undefined && precioEfectivo > filtroPrecioMax) return false;
+    if (soloOferta && p.precioOferta === null) return false;
+    return true;
+  });
+  const hayFiltrosPiezasActivos =
+    !!filtroTalla ||
+    !!filtroMedidas ||
+    filtroPesoMin !== undefined ||
+    filtroPesoMax !== undefined ||
+    filtroPrecioMin !== undefined ||
+    filtroPrecioMax !== undefined ||
+    soloOferta;
   // Al elegir un material, la galería pasa a ser la de esa variante; si la
   // variante no tiene imágenes cargadas se cae a las del producto.
   const galeria =
@@ -204,7 +256,7 @@ export function ProductoDetalle() {
                     disabled={v.piezasDisponibles === 0}
                     onClick={() => {
                       setIdVarianteElegida(v.idVariante);
-                      setTallaElegida(undefined);
+                      limpiarFiltrosPiezas();
                     }}
                   >
                     {v.material}
@@ -217,37 +269,170 @@ export function ProductoDetalle() {
                 )}
               </div>
 
-              {idVarianteElegida && tallas.length > 0 && (
-                <>
-                  <h2>Elegí talla</h2>
-                  <div className="lista-variantes">
-                    <button
-                      type="button"
-                      className={!tallaElegida ? "activa" : ""}
-                      onClick={() => setTallaElegida(undefined)}
-                    >
-                      Todas
-                    </button>
-                    {tallas.map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        className={t === tallaElegida ? "activa" : ""}
-                        onClick={() => setTallaElegida(t)}
-                      >
-                        {t}
-                      </button>
-                    ))}
+              {idVarianteElegida &&
+                !piezasCargando &&
+                (tallasEnPiezas.length > 1 ||
+                  medidasEnPiezas.length > 1 ||
+                  pesoMinDisp !== pesoMaxDisp ||
+                  precioMinDisp !== precioMaxDisp ||
+                  hayOfertasEnVariante) && (
+                  <div className="filtros-piezas">
+                    <div className="filtros-piezas__header">
+                      <h2>Filtrar piezas</h2>
+                      {hayFiltrosPiezasActivos && (
+                        <button
+                          type="button"
+                          className="limpiar"
+                          onClick={limpiarFiltrosPiezas}
+                        >
+                          Limpiar filtros
+                        </button>
+                      )}
+                    </div>
+
+                    {tallasEnPiezas.length > 1 && (
+                      <div className="campo">
+                        <label>Talla</label>
+                        <div className="lista-variantes">
+                          <button
+                            type="button"
+                            className={!filtroTalla ? "activa" : ""}
+                            onClick={() => setFiltroTalla(undefined)}
+                          >
+                            Todas
+                          </button>
+                          {tallasEnPiezas.map((t) => (
+                            <button
+                              key={t}
+                              type="button"
+                              className={t === filtroTalla ? "activa" : ""}
+                              onClick={() => setFiltroTalla(t)}
+                            >
+                              {t}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {medidasEnPiezas.length > 1 && (
+                      <div className="campo">
+                        <label>Medidas</label>
+                        <div className="lista-variantes">
+                          <button
+                            type="button"
+                            className={!filtroMedidas ? "activa" : ""}
+                            onClick={() => setFiltroMedidas(undefined)}
+                          >
+                            Todas
+                          </button>
+                          {medidasEnPiezas.map((m) => (
+                            <button
+                              key={m}
+                              type="button"
+                              className={m === filtroMedidas ? "activa" : ""}
+                              onClick={() => setFiltroMedidas(m)}
+                            >
+                              {m}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {pesoMinDisp !== null &&
+                      pesoMaxDisp !== null &&
+                      pesoMinDisp !== pesoMaxDisp && (
+                        <div className="campo">
+                          <label>
+                            Peso (g): {pesoMinDisp} – {pesoMaxDisp}
+                          </label>
+                          <div className="rango">
+                            <input
+                              type="number"
+                              step="0.001"
+                              placeholder={String(pesoMinDisp)}
+                              value={filtroPesoMin ?? ""}
+                              onChange={(e) =>
+                                setFiltroPesoMin(
+                                  e.target.value ? Number(e.target.value) : undefined
+                                )
+                              }
+                            />
+                            <span>-</span>
+                            <input
+                              type="number"
+                              step="0.001"
+                              placeholder={String(pesoMaxDisp)}
+                              value={filtroPesoMax ?? ""}
+                              onChange={(e) =>
+                                setFiltroPesoMax(
+                                  e.target.value ? Number(e.target.value) : undefined
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                    {precioMinDisp !== null &&
+                      precioMaxDisp !== null &&
+                      precioMinDisp !== precioMaxDisp && (
+                        <div className="campo">
+                          <label>
+                            Precio: ${precioMinDisp.toLocaleString()} – $
+                            {precioMaxDisp.toLocaleString()}
+                          </label>
+                          <div className="rango">
+                            <input
+                              type="number"
+                              placeholder={String(precioMinDisp)}
+                              value={filtroPrecioMin ?? ""}
+                              onChange={(e) =>
+                                setFiltroPrecioMin(
+                                  e.target.value ? Number(e.target.value) : undefined
+                                )
+                              }
+                            />
+                            <span>-</span>
+                            <input
+                              type="number"
+                              placeholder={String(precioMaxDisp)}
+                              value={filtroPrecioMax ?? ""}
+                              onChange={(e) =>
+                                setFiltroPrecioMax(
+                                  e.target.value ? Number(e.target.value) : undefined
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                    {hayOfertasEnVariante && (
+                      <label className="chk-oferta">
+                        <input
+                          type="checkbox"
+                          checked={soloOferta}
+                          onChange={(e) => setSoloOferta(e.target.checked)}
+                        />
+                        Solo piezas en oferta
+                      </label>
+                    )}
                   </div>
-                </>
-              )}
+                )}
 
               {idVarianteElegida && (
                 <div className="piezas">
-                  <h2>Piezas disponibles</h2>
+                  <h2>
+                    Piezas disponibles
+                    {!piezasCargando &&
+                      hayFiltrosPiezasActivos &&
+                      ` (${piezasVisibles.length} de ${piezasDeVariante.length})`}
+                  </h2>
                   {piezasCargando ? (
                     <p>Cargando piezas...</p>
-                  ) : piezasVisibles && piezasVisibles.length > 0 ? (
+                  ) : piezasVisibles.length > 0 ? (
                     <ul>
                       {piezasVisibles.map((p) => {
                         const clave = `pieza:${p.idPieza}`;
@@ -307,8 +492,8 @@ export function ProductoDetalle() {
                     </ul>
                   ) : (
                     <p>
-                      {tallaElegida
-                        ? `No hay piezas disponibles en talla ${tallaElegida}.`
+                      {hayFiltrosPiezasActivos
+                        ? "No hay piezas que coincidan con los filtros."
                         : "No hay piezas disponibles en esta variante."}
                     </p>
                   )}
@@ -510,6 +695,83 @@ const Container = styled.div`
 
   .lista-variantes button:disabled {
     text-decoration: line-through;
+  }
+
+  .filtros-piezas {
+    margin-top: 22px;
+    padding: 14px 16px;
+    border: 1px solid ${v.borderSutil};
+    border-radius: 10px;
+    background: ${v.bgTarjeta};
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    &__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      h2 {
+        margin: 0;
+      }
+    }
+
+    h2 {
+      margin: 0;
+    }
+
+    .limpiar {
+      background: none;
+      border: none;
+      color: ${v.colorTextoSuave};
+      font-size: 12.5px;
+      cursor: pointer;
+      text-decoration: underline;
+      &:hover {
+        color: ${v.colorPrincipal};
+      }
+    }
+
+    .campo {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      label {
+        font-size: 12px;
+        color: ${v.colorTextoSuave};
+      }
+    }
+
+    .campo .lista-variantes button {
+      padding: 5px 12px;
+      font-size: 12.5px;
+    }
+
+    .rango {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: ${v.colorTextoSuave2};
+      input {
+        width: 90px;
+        padding: 7px 9px;
+        border-radius: 8px;
+        border: 1px solid ${v.borderSutil};
+        background: rgba(255, 255, 255, 0.03);
+        color: ${v.colorTexto};
+        font-family: inherit;
+        font-size: 13px;
+      }
+    }
+
+    .chk-oferta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: ${v.colorTextoSuave};
+      cursor: pointer;
+    }
   }
 
   .piezas ul {
