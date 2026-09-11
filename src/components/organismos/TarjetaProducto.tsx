@@ -38,6 +38,15 @@ export function TarjetaProducto({ producto }: Props) {
           {producto.marca ? ` · ${producto.marca}` : ""}
         </span>
         <h3>{producto.nombre}</h3>
+        {producto.etiquetas.length > 0 && (
+          <span className="etiquetas">
+            {producto.etiquetas.slice(0, 3).map((et) => (
+              <span key={et} className="etiqueta">
+                {et}
+              </span>
+            ))}
+          </span>
+        )}
         {enOferta ? (
           <span className="precios">
             <span className="precio-anterior">
@@ -141,6 +150,21 @@ const Container = styled(Link)`
   .precio {
     font-weight: 700;
     color: ${v.colorPrincipal};
+  }
+
+  .etiquetas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 2px 0;
+  }
+
+  .etiqueta {
+    font-size: 10.5px;
+    padding: 1px 7px;
+    border-radius: 20px;
+    border: 1px solid ${v.borderSutil};
+    color: ${v.colorTextoSuave};
   }
 
   .precios {

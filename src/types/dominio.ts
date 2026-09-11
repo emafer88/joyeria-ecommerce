@@ -10,6 +10,11 @@ export interface CategoriaCatalogo {
   color: string | null;
 }
 
+export interface EtiquetaCatalogo {
+  id: number;
+  nombre: string;
+}
+
 export interface ProductoCatalogo {
   id: number;
   nombre: string;
@@ -27,6 +32,8 @@ export interface ProductoCatalogo {
   precioOferta: number | null;
   /** Marca del producto (`productos.id_marca` → `marca.nombre`), o null. */
   marca: string | null;
+  /** Etiquetas/tags del producto (nombres, ya ordenados). */
+  etiquetas: string[];
 }
 
 /** Banner del hero del home (admin: proyecto-joyeria → Productos → Banners). */
@@ -54,6 +61,12 @@ export interface ProductoDetalle {
   precioOferta: number | null;
   /** Marca del producto (`productos.id_marca` → `marca.nombre`), o null. */
   marca: string | null;
+  /** Medidas/dimensiones, texto libre. */
+  medidas: string | null;
+  /** Tallas disponibles (texto libre) para productos no serializados. */
+  tallas: string | null;
+  /** Etiquetas/tags del producto (nombres, ya ordenados). */
+  etiquetas: string[];
 }
 
 export interface ImagenProducto {
@@ -69,6 +82,8 @@ export interface VarianteDisponible {
   precioVentaSugerido: number | null;
   imagenPortada: string | null;
   piezasDisponibles: number;
+  /** Tallas distintas entre las piezas disponibles de esta variante. */
+  tallasDisponibles: string[];
 }
 
 export interface PiezaDisponible {
@@ -76,12 +91,14 @@ export interface PiezaDisponible {
   sku: string;
   peso: number;
   precioVenta: number;
+  talla: string | null;
 }
 
 /** Filtros del catálogo, atados 1:1 a los parámetros de `ecommerce_listar_productos`. */
 export interface FiltrosCatalogo {
   idCategoria: number | null;
   material: string | null;
+  idEtiqueta: number | null;
   precioMin: number | null;
   precioMax: number | null;
   buscador: string | null;

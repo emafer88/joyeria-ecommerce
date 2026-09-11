@@ -7,6 +7,7 @@ import type { FiltrosCatalogo } from "../types/dominio";
 const FILTROS_INICIALES: FiltrosCatalogo = {
   idCategoria: null,
   material: null,
+  idEtiqueta: null,
   precioMin: null,
   precioMax: null,
   buscador: null,
@@ -18,6 +19,7 @@ interface FiltrosCatalogoState {
   filtros: FiltrosCatalogo;
   setCategoria: (idCategoria: number | null) => void;
   setMaterial: (material: string | null) => void;
+  setEtiqueta: (idEtiqueta: number | null) => void;
   setRangoPrecio: (min: number | null, max: number | null) => void;
   setBuscador: (buscador: string | null) => void;
   setPagina: (pagina: number) => void;
@@ -30,6 +32,8 @@ export const useFiltrosCatalogoStore = create<FiltrosCatalogoState>((set) => ({
     set((s) => ({ filtros: { ...s.filtros, idCategoria, pagina: 1 } })),
   setMaterial: (material) =>
     set((s) => ({ filtros: { ...s.filtros, material, pagina: 1 } })),
+  setEtiqueta: (idEtiqueta) =>
+    set((s) => ({ filtros: { ...s.filtros, idEtiqueta, pagina: 1 } })),
   setRangoPrecio: (precioMin, precioMax) =>
     set((s) => ({ filtros: { ...s.filtros, precioMin, precioMax, pagina: 1 } })),
   setBuscador: (buscador) =>

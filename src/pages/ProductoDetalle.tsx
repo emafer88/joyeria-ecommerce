@@ -18,6 +18,7 @@ export function ProductoDetalle() {
   const { id } = useParams<{ id: string }>();
   const idProducto = id ? Number(id) : undefined;
   const [idVarianteElegida, setIdVarianteElegida] = useState<number>();
+  const [tallaElegida, setTallaElegida] = useState<string>();
   const [cantidad, setCantidad] = useState(1);
 
   const { data: producto, isLoading, isError } =
@@ -38,6 +39,11 @@ export function ProductoDetalle() {
   const varianteElegida = variantes?.find(
     (v) => v.idVariante === idVarianteElegida
   );
+  const tallas = varianteElegida?.tallasDisponibles ?? [];
+  const piezasVisibles =
+    tallaElegida && tallas.length > 0
+      ? piezas?.filter((p) => p.talla === tallaElegida)
+      : piezas;
   // Al elegir un material, la galería pasa a ser la de esa variante; si la
   // variante no tiene imágenes cargadas se cae a las del producto.
   const galeria =
@@ -89,7 +95,33 @@ export function ProductoDetalle() {
             {producto.marca ? ` · ${producto.marca}` : ""}
           </span>
           <h1>{producto.nombre}</h1>
+          {producto.etiquetas.length > 0 && (
+            <span className="etiquetas">
+              {producto.etiquetas.map((et) => (
+                <span key={et} className="etiqueta">
+                  {et}
+                </span>
+              ))}
+            </span>
+          )}
           {producto.descripcion && <p>{producto.descripcion}</p>}
+
+          {(producto.medidas || producto.tallas) && (
+            <dl className="ficha">
+              {producto.medidas && (
+                <div>
+                  <dt>Medidas</dt>
+                  <dd>{producto.medidas}</dd>
+                </div>
+              )}
+              {producto.tallas && (
+                <div>
+                  <dt>Tallas</dt>
+                  <dd>{producto.tallas}</dd>
+                </div>
+              )}
+            </dl>
+          )}
 
           {!producto.esJoyeria && (
             <>
@@ -170,7 +202,10 @@ export function ProductoDetalle() {
                       v.idVariante === idVarianteElegida ? "activa" : ""
                     }
                     disabled={v.piezasDisponibles === 0}
-                    onClick={() => setIdVarianteElegida(v.idVariante)}
+                    onClick={() => {
+                      setIdVarianteElegida(v.idVariante);
+                      setTallaElegida(undefined);
+                    }}
                   >
                     {v.material}
                     {v.pureza ? ` (${v.pureza})` : ""}
@@ -182,14 +217,39 @@ export function ProductoDetalle() {
                 )}
               </div>
 
+              {idVarianteElegida && tallas.length > 0 && (
+                <>
+                  <h2>Elegí talla</h2>
+                  <div className="lista-variantes">
+                    <button
+                      type="button"
+                      className={!tallaElegida ? "activa" : ""}
+                      onClick={() => setTallaElegida(undefined)}
+                    >
+                      Todas
+                    </button>
+                    {tallas.map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        className={t === tallaElegida ? "activa" : ""}
+                        onClick={() => setTallaElegida(t)}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
               {idVarianteElegida && (
                 <div className="piezas">
                   <h2>Piezas disponibles</h2>
                   {piezasCargando ? (
                     <p>Cargando piezas...</p>
-                  ) : piezas && piezas.length > 0 ? (
+                  ) : piezasVisibles && piezasVisibles.length > 0 ? (
                     <ul>
-                      {piezas.map((p) => {
+                      {piezasVisibles.map((p) => {
                         const clave = `pieza:${p.idPieza}`;
                         const yaEnCarrito = items.some(
                           (i) => claveCarritoItem(i) === clave
@@ -197,7 +257,8 @@ export function ProductoDetalle() {
                         return (
                           <li key={p.idPieza}>
                             <span>
-                              SKU {p.sku} — {p.peso} g — $
+                              SKU {p.sku} — {p.peso} g
+                              {p.talla ? ` — talla ${p.talla}` : ""} — $
                               {p.precioVenta.toLocaleString()}
                             </span>
                             <button
@@ -225,7 +286,11 @@ export function ProductoDetalle() {
                       })}
                     </ul>
                   ) : (
-                    <p>No hay piezas disponibles en esta variante.</p>
+                    <p>
+                      {tallaElegida
+                        ? `No hay piezas disponibles en talla ${tallaElegida}.`
+                        : "No hay piezas disponibles en esta variante."}
+                    </p>
                   )}
                 </div>
               )}
@@ -301,6 +366,42 @@ const Container = styled.div`
   p {
     color: ${v.colorTextoSuave};
     line-height: 1.5;
+  }
+
+  .etiquetas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0 4px;
+  }
+
+  .etiqueta {
+    font-size: 11.5px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    border: 1px solid ${v.borderSutil};
+    color: ${v.colorTextoSuave};
+  }
+
+  .ficha {
+    margin: 16px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    div {
+      display: flex;
+      gap: 8px;
+      font-size: 13.5px;
+    }
+    dt {
+      color: ${v.colorTextoSuave2};
+      min-width: 72px;
+    }
+    dd {
+      margin: 0;
+      color: ${v.colorTexto};
+    }
   }
 
   .precio {

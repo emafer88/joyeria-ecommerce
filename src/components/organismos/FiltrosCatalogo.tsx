@@ -1,5 +1,8 @@
 import styled from "styled-components";
-import { useCategoriasQuery } from "../../tanstack/CatalogoStack";
+import {
+  useCategoriasQuery,
+  useEtiquetasQuery,
+} from "../../tanstack/CatalogoStack";
 import { useFiltrosCatalogoStore } from "../../store/FiltrosCatalogoStore";
 import { v } from "../../styles/variables";
 
@@ -10,10 +13,12 @@ const MATERIALES = ["Oro", "Plata", "Acero", "Fantasía"];
 
 export function FiltrosCatalogo() {
   const { data: categorias, isLoading } = useCategoriasQuery();
+  const { data: etiquetas } = useEtiquetasQuery();
   const {
     filtros,
     setCategoria,
     setMaterial,
+    setEtiqueta,
     setBuscador,
     setRangoPrecio,
     limpiarFiltros,
@@ -66,6 +71,26 @@ export function FiltrosCatalogo() {
           ))}
         </select>
       </div>
+
+      {etiquetas && etiquetas.length > 0 && (
+        <div className="campo">
+          <label htmlFor="etiqueta">Etiqueta</label>
+          <select
+            id="etiqueta"
+            value={filtros.idEtiqueta ?? ""}
+            onChange={(e) =>
+              setEtiqueta(e.target.value ? Number(e.target.value) : null)
+            }
+          >
+            <option value="">Todas</option>
+            {etiquetas.map((et) => (
+              <option key={et.id} value={et.id}>
+                {et.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="campo campo--rango">
         <label>Precio</label>
