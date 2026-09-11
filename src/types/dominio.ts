@@ -92,6 +92,8 @@ export interface PiezaDisponible {
   peso: number;
   precioVenta: number;
   talla: string | null;
+  /** Medidas de esta pieza física puntual (ej. "45 cm"), o null. */
+  medidas: string | null;
   /** Precio con descuento de esta pieza puntual, o null si no hay oferta. */
   precioOferta: number | null;
 }

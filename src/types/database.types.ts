@@ -1976,6 +1976,7 @@ export type Database = {
         Args: { _id_variante: number }
         Returns: {
           id_pieza: number
+          medidas: string | null
           peso: number
           precio_oferta: number | null
           precio_venta: number

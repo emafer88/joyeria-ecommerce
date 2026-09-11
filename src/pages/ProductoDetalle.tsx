@@ -264,7 +264,8 @@ export function ProductoDetalle() {
                           <li key={p.idPieza}>
                             <span>
                               SKU {p.sku} — {p.peso} g
-                              {p.talla ? ` — talla ${p.talla}` : ""} —{" "}
+                              {p.talla ? ` — talla ${p.talla}` : ""}
+                              {p.medidas ? ` — ${p.medidas}` : ""} —{" "}
                               {p.precioOferta !== null ? (
                                 <>
                                   <span className="precio-anterior">
