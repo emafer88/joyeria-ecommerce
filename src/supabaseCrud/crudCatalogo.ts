@@ -45,6 +45,12 @@ export async function MostrarMarcas(): Promise<MarcaCatalogo[]> {
   return (data ?? []).map((m) => ({ id: m.id, nombre: m.nombre }));
 }
 
+export async function MostrarCostoEnvio(): Promise<number> {
+  const { data, error } = await supabase.rpc("ecommerce_costo_envio");
+  if (error) throw new Error(error.message);
+  return data ?? 0;
+}
+
 export async function MostrarProductos(
   filtros: FiltrosCatalogo
 ): Promise<PaginaProductos> {
