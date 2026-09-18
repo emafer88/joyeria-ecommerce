@@ -10,6 +10,21 @@ const ETIQUETAS: Record<string, string> = {
   anulada: "Anulado",
 };
 
+const ETIQUETAS_ENVIO: Record<string, string> = {
+  preparando: "Preparando",
+  enviado: "Enviado",
+  entregado: "Entregado",
+};
+
+function etiquetaPedido(pedido: { estado: string; estadoEnvio: string | null }): string {
+  if (pedido.estado === "confirmada") {
+    return pedido.estadoEnvio
+      ? (ETIQUETAS_ENVIO[pedido.estadoEnvio] ?? pedido.estadoEnvio)
+      : "Pago recibido";
+  }
+  return ETIQUETAS[pedido.estado] ?? pedido.estado;
+}
+
 export function MisPedidos() {
   const session = useAuthStore((s) => s.session);
   const { data, isLoading, isError, error } = useMisPedidosQuery(!!session);
@@ -41,7 +56,7 @@ export function MisPedidos() {
                     {new Date(pedido.fecha).toLocaleDateString()}
                   </span>
                   <span className={`estado estado--${pedido.estado}`}>
-                    {ETIQUETAS[pedido.estado] ?? pedido.estado}
+                    {etiquetaPedido(pedido)}
                   </span>
                 </div>
                 <div className="fila">

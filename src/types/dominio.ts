@@ -177,6 +177,8 @@ export interface PedidoResumen {
   montoTotal: number;
   nroComprobante: string | null;
   cantidadProductos: number;
+  /** null/'preparando'/'enviado'/'entregado', solo relevante si estado === 'confirmada'. */
+  estadoEnvio: string | null;
 }
 
 // ----------------------------------------------------------------------------
