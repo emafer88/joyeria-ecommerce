@@ -10,6 +10,12 @@ const ETIQUETAS: Record<string, string> = {
   anulada: "Pedido anulado (el pago no se completó)",
 };
 
+const ICONOS: Record<string, string> = {
+  pendiente: "…",
+  confirmada: "✓",
+  anulada: "✕",
+};
+
 export function EstadoPedidoPagina() {
   const { idOrdenExterna } = useParams<{ idOrdenExterna: string }>();
   const { data, isLoading, isError } = useEstadoPedidoQuery(idOrdenExterna);
@@ -25,11 +31,14 @@ export function EstadoPedidoPagina() {
 
   return (
     <Container>
+      <span className={`icono icono--${data.estado}`}>
+        {ICONOS[data.estado] ?? ""}
+      </span>
       <span className={`etiqueta etiqueta--${data.estado}`}>
         {ETIQUETAS[data.estado] ?? data.estado}
       </span>
       {data.nroComprobante && (
-        <p className="comprobante">Comprobante: {data.nroComprobante}</p>
+        <p className="comprobante">Número de pedido: {data.nroComprobante}</p>
       )}
 
       <ul className="items">
@@ -75,6 +84,33 @@ const Container = styled.div`
   a {
     color: ${v.colorPrincipal};
     text-decoration: none;
+  }
+
+  .icono {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    &--confirmada {
+      background: rgba(243, 210, 12, 0.12);
+      border: 1px solid ${v.borderDorado};
+      color: ${v.colorPrincipal};
+    }
+    &--pendiente {
+      background: rgba(144, 70, 255, 0.12);
+      border: 1px solid rgba(144, 70, 255, 0.4);
+      color: ${v.colorExito};
+    }
+    &--anulada {
+      background: rgba(255, 90, 90, 0.1);
+      border: 1px solid rgba(255, 90, 90, 0.35);
+      color: #ff8a80;
+    }
   }
 
   .etiqueta {

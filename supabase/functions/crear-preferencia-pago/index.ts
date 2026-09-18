@@ -51,6 +51,25 @@ interface DireccionInline {
 }
 type EnvioRequest = { idDireccion: number } | DireccionInline;
 
+// Datos de contacto del comprador: siempre requeridos, incluso comprando
+// como invitado o eligiendo una dirección ya guardada (que no pasa por
+// DireccionInline). Es lo que se manda a Mercado Pago como payer y lo que
+// queda guardado como contacto del pedido.
+interface ClienteRequest {
+  nombre?: string;
+  email?: string;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validarCliente(c: ClienteRequest | undefined): { nombre: string; email: string } | { error: string } {
+  const nombre = c?.nombre?.trim() ?? "";
+  const email = c?.email?.trim() ?? "";
+  if (!nombre) return { error: "falta el nombre del cliente" };
+  if (!EMAIL_RE.test(email)) return { error: "el email no es válido" };
+  return { nombre, email };
+}
+
 interface EnvioSnapshot {
   destinatario: string;
   telefono: string;
@@ -125,7 +144,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return respuestaCors();
   if (req.method !== "POST") return json({ error: "método no permitido" }, 405);
 
-  let body: { items?: ItemRequest[]; envio?: EnvioRequest };
+  let body: { items?: ItemRequest[]; envio?: EnvioRequest; cliente?: ClienteRequest };
   try {
     body = await req.json();
   } catch {
@@ -134,6 +153,9 @@ Deno.serve(async (req) => {
 
   const items = body.items ?? [];
   if (items.length === 0) return json({ error: "el carrito está vacío" }, 400);
+
+  const clienteValidado = validarCliente(body.cliente);
+  if ("error" in clienteValidado) return json({ error: clienteValidado.error }, 400);
 
   // --- 0a) Usuario logueado (opcional): el checkout sigue soportando compra
   //     anónima. Si hay sesión, se vincula/crea el cliente del POS y su
@@ -312,7 +334,12 @@ Deno.serve(async (req) => {
   // dirección, el pedido igual muestra a dónde se envió).
   const { error: errorEnvio } = await supabaseAdmin
     .from("ecommerce_orden_envio")
-    .insert({ id_orden_externa: idOrdenExterna, user_id: userId, ...envioSnapshot });
+    .insert({
+      id_orden_externa: idOrdenExterna,
+      user_id: userId,
+      ...envioSnapshot,
+      email: clienteValidado.email,
+    });
   if (errorEnvio) {
     console.error("Error guardando el envío:", errorEnvio.message);
     await anularVenta(venta.id, idOrdenExterna);
@@ -389,8 +416,8 @@ Deno.serve(async (req) => {
       ],
       external_reference: idOrdenExterna,
       payer: {
-        name: userNombre ?? envioSnapshot.destinatario,
-        ...(userEmail ? { email: userEmail } : {}),
+        name: clienteValidado.nombre,
+        email: clienteValidado.email,
         phone: { number: envioSnapshot.telefono },
         address: {
           zip_code: envioSnapshot.cp,

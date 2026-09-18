@@ -1,5 +1,6 @@
+import { useEffect } from "react";
 import styled from "styled-components";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { v } from "../styles/variables";
 
 interface Props {
@@ -31,7 +32,19 @@ const TEXTOS: Record<
 export function PagoResultado({ tipo }: Props) {
   const [params] = useSearchParams();
   const idOrdenExterna = params.get("id");
+  const navigate = useNavigate();
   const { icono, titulo, mensaje } = TEXTOS[tipo];
+
+  // Éxito: en vez de un mensaje genérico acá, vamos directo a la pantalla
+  // que ya resuelve la carrera contra el webhook de Mercado Pago (polling)
+  // y muestra el número de pedido apenas esté confirmado.
+  useEffect(() => {
+    if (tipo === "exito" && idOrdenExterna) {
+      navigate(`/pedido/${idOrdenExterna}`, { replace: true });
+    }
+  }, [tipo, idOrdenExterna, navigate]);
+
+  if (tipo === "exito" && idOrdenExterna) return null;
 
   return (
     <Container>
