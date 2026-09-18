@@ -3,12 +3,15 @@ import styled from "styled-components";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useCarritoStore, useTotalCarrito } from "../store/CarritoStore";
+import { useAuthStore, nombreVisible } from "../store/AuthStore";
 import { useCrearPreferenciaMutation } from "../tanstack/CheckoutStack";
 import { useCostoEnvioQuery } from "../tanstack/CatalogoStack";
 import { SelectorDireccion } from "../components/organismos/SelectorDireccion";
 import { claveCarritoItem } from "../types/dominio";
 import type { EnvioCheckout } from "../supabaseCrud/crudCheckout";
 import { v } from "../styles/variables";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function Checkout() {
   const items = useCarritoStore((s) => s.items);
@@ -18,6 +21,12 @@ export function Checkout() {
   const total = subtotal + costoEnvio;
   const [enviando, setEnviando] = useState(false);
   const [envio, setEnvio] = useState<EnvioCheckout | null>(null);
+
+  const user = useAuthStore((s) => s.user);
+  const [nombre, setNombre] = useState(() =>
+    user ? nombreVisible(user) : ""
+  );
+  const [email, setEmail] = useState(() => user?.email ?? "");
 
   const { mutateAsync } = useCrearPreferenciaMutation();
 
@@ -31,14 +40,26 @@ export function Checkout() {
     );
   }
 
+  const nombreValido = nombre.trim().length > 0;
+  const emailValido = EMAIL_RE.test(email.trim());
+  const contactoValido = nombreValido && emailValido;
+
   const pagar = async () => {
+    if (!contactoValido) {
+      toast.error("Completá tu nombre y un email válido.");
+      return;
+    }
     if (!envio) {
       toast.error("Elegí o cargá una dirección de envío.");
       return;
     }
     setEnviando(true);
     try {
-      const { initPoint } = await mutateAsync({ items, envio });
+      const { initPoint } = await mutateAsync({
+        items,
+        envio,
+        cliente: { nombre: nombre.trim(), email: email.trim() },
+      });
       vaciar();
       window.location.href = initPoint;
     } catch (err) {
@@ -68,6 +89,30 @@ export function Checkout() {
         ))}
       </ul>
 
+      <div className="contacto">
+        <h2>Datos de contacto</h2>
+        <div className="campo">
+          <label htmlFor="nombre">Nombre</label>
+          <input
+            id="nombre"
+            type="text"
+            placeholder="Nombre completo"
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+          />
+        </div>
+        <div className="campo">
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            placeholder="tu@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+      </div>
+
       <SelectorDireccion onEnvio={setEnvio} />
 
       <div className="totales">
@@ -78,14 +123,16 @@ export function Checkout() {
 
       <button
         type="button"
-        disabled={enviando || !envio}
+        disabled={enviando || !envio || !contactoValido}
         onClick={pagar}
       >
         {enviando
           ? "Redirigiendo a Mercado Pago..."
-          : !envio
-            ? "Elegí una dirección de envío"
-            : "Pagar con Mercado Pago"}
+          : !contactoValido
+            ? "Completá tus datos de contacto"
+            : !envio
+              ? "Elegí una dirección de envío"
+              : "Pagar con Mercado Pago"}
       </button>
 
       <p className="nota">
@@ -131,6 +178,42 @@ const Container = styled.div`
       &:last-child {
         border-bottom: none;
         padding-bottom: 0;
+      }
+    }
+  }
+
+  .contacto {
+    margin-bottom: 24px;
+    h2 {
+      font-size: 16px;
+      margin: 0 0 10px;
+    }
+  }
+
+  .campo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: ${v.colorTextoSuave};
+    }
+    input {
+      padding: 9px 11px;
+      border-radius: 8px;
+      border: 1px solid ${v.borderSutil};
+      background: rgba(255, 255, 255, 0.03);
+      color: ${v.colorTexto};
+      font-size: 14px;
+      font-family: inherit;
+      &::placeholder {
+        color: ${v.colorTextoSuave2};
+      }
+      &:focus {
+        outline: none;
+        border-color: ${v.borderDorado};
       }
     }
   }

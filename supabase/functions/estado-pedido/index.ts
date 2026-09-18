@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
   const { data: envio } = await supabaseAdmin
     .from("ecommerce_orden_envio")
     .select(
-      "destinatario, telefono, cp, estado, municipio, colonia, calle, numero_exterior, numero_interior, entre_calles, referencias, lat, lng"
+      "destinatario, telefono, cp, estado, municipio, colonia, calle, numero_exterior, numero_interior, entre_calles, referencias, lat, lng, email"
     )
     .eq("id_orden_externa", idOrdenExterna)
     .maybeSingle();
@@ -68,6 +68,7 @@ Deno.serve(async (req) => {
           referencias: envio.referencias,
           lat: envio.lat,
           lng: envio.lng,
+          email: envio.email,
         }
       : null,
   });

@@ -225,6 +225,8 @@ export interface EnvioSnapshot {
   referencias: string | null;
   lat: number | null;
   lng: number | null;
+  /** Email de contacto del comprador (no de la dirección). */
+  email: string | null;
 }
 
 /** Resultado de `ecommerce_buscar_cp`, agrupado para el form. */

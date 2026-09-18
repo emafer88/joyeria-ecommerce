@@ -9,6 +9,13 @@ export interface ResultadoPreferencia {
   initPoint: string;
 }
 
+/** Datos de contacto del comprador, siempre requeridos (incluso comprando
+ *  como invitado o eligiendo una dirección ya guardada). */
+export interface ClienteCheckout {
+  nombre: string;
+  email: string;
+}
+
 /** Dirección para el checkout: id de una guardada, o los campos inline
  *  (guest / "otra dirección"). Coincide con lo que valida la Edge Function. */
 export type EnvioCheckout =
@@ -74,11 +81,12 @@ async function mensajeErrorEdgeFunction(error: unknown): Promise<string> {
 
 export async function CrearPreferenciaPago(
   items: CarritoItem[],
-  envio: EnvioCheckout
+  envio: EnvioCheckout,
+  cliente: ClienteCheckout
 ): Promise<ResultadoPreferencia> {
   const { data, error } = await supabase.functions.invoke(
     "crear-preferencia-pago",
-    { body: { items: itemsParaEdgeFunction(items), envio } }
+    { body: { items: itemsParaEdgeFunction(items), envio, cliente } }
   );
   if (error) throw new Error(await mensajeErrorEdgeFunction(error));
   return data as ResultadoPreferencia;
