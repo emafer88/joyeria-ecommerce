@@ -41,6 +41,9 @@ export interface ItemPedido {
   cantidad: number;
   precioVenta: number;
   total: number;
+  idProducto: number;
+  /** null si es un producto normal; si tiene valor, es una pieza única de joyería (no recomprable tal cual). */
+  idPieza: number | null;
 }
 
 export interface EstadoPedido {

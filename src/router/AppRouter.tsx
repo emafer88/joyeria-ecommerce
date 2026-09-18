@@ -9,6 +9,8 @@ import { EstadoPedidoPagina } from "../pages/EstadoPedidoPagina";
 import { Acceso } from "../pages/Acceso";
 import { MisPedidos } from "../pages/MisPedidos";
 import { MisDirecciones } from "../pages/MisDirecciones";
+import { MiPerfil } from "../pages/MiPerfil";
+import { MisFavoritos } from "../pages/MisFavoritos";
 import { RutaProtegida } from "../components/organismos/RutaProtegida";
 
 export function AppRouter() {
@@ -37,6 +39,22 @@ export function AppRouter() {
         element={
           <RutaProtegida>
             <MisDirecciones />
+          </RutaProtegida>
+        }
+      />
+      <Route
+        path="/mi-perfil"
+        element={
+          <RutaProtegida>
+            <MiPerfil />
+          </RutaProtegida>
+        }
+      />
+      <Route
+        path="/mis-favoritos"
+        element={
+          <RutaProtegida>
+            <MisFavoritos />
           </RutaProtegida>
         }
       />

@@ -12,6 +12,7 @@ import {
 import { useCarritoStore } from "../store/CarritoStore";
 import { claveCarritoItem } from "../types/dominio";
 import { porcentajeDescuento } from "../utils/precio";
+import { BotonFavorito } from "../components/organismos/BotonFavorito";
 import { v } from "../styles/variables";
 
 export function ProductoDetalle() {
@@ -161,7 +162,10 @@ export function ProductoDetalle() {
             {producto.categoria}
             {producto.marca ? ` · ${producto.marca}` : ""}
           </span>
-          <h1>{producto.nombre}</h1>
+          <div className="titulo-fila">
+            <h1>{producto.nombre}</h1>
+            <BotonFavorito idProducto={producto.id} />
+          </div>
           {producto.etiquetas.length > 0 && (
             <span className="etiquetas">
               {producto.etiquetas.map((et) => (
@@ -546,6 +550,16 @@ const Container = styled.div`
   h1 {
     margin: 8px 0 12px;
     font-size: 26px;
+  }
+
+  .titulo-fila {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    h1 {
+      margin: 8px 0 12px;
+    }
   }
 
   p {

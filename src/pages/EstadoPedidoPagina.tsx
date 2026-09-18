@@ -1,6 +1,9 @@
 import styled from "styled-components";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 import { useEstadoPedidoQuery } from "../tanstack/CheckoutStack";
+import { useCarritoStore } from "../store/CarritoStore";
+import type { ItemPedido } from "../supabaseCrud/crudCheckout";
 import { lineaDireccion } from "../utils/direccion";
 import { v } from "../styles/variables";
 
@@ -35,9 +38,23 @@ const METODOS_PAGO: Record<string, string> = {
   digital_currency: "Billetera digital",
 };
 
+function recomprar(items: ItemPedido[]) {
+  const agregarProducto = useCarritoStore.getState().agregarProducto;
+  const recomprables = items.filter((i) => i.idPieza === null);
+
+  for (const item of recomprables) {
+    agregarProducto(
+      { idProducto: item.idProducto, nombre: item.nombre, precioVenta: item.precioVenta, imagen: null },
+      item.cantidad
+    );
+  }
+  return recomprables.length;
+}
+
 export function EstadoPedidoPagina() {
   const { idOrdenExterna } = useParams<{ idOrdenExterna: string }>();
   const { data, isLoading, isError } = useEstadoPedidoQuery(idOrdenExterna);
+  const navigate = useNavigate();
 
   if (isLoading) return <Container>Cargando pedido...</Container>;
   if (isError || !data)
@@ -49,6 +66,23 @@ export function EstadoPedidoPagina() {
     );
 
   const paso = data.estado === "confirmada" ? pasoActual(data.estadoEnvio) : null;
+  const hayPiezasUnicas = data.items.some((i) => i.idPieza !== null);
+
+  const volverAComprar = () => {
+    const cantidad = recomprar(data.items);
+    if (cantidad === 0) {
+      toast.info(
+        "Este pedido era solo piezas únicas de joyería — visitá el producto para elegir una disponible."
+      );
+      return;
+    }
+    toast.success(
+      hayPiezasUnicas
+        ? "Agregamos los productos al carrito (las piezas únicas de joyería no se pudieron reagregar automáticamente)."
+        : "Agregamos los productos al carrito."
+    );
+    navigate("/carrito");
+  };
 
   return (
     <Container>
@@ -113,6 +147,12 @@ export function EstadoPedidoPagina() {
             <p className="extra">Referencias: {data.envio.referencias}</p>
           )}
         </div>
+      )}
+
+      {data.estado === "confirmada" && (
+        <button type="button" className="recomprar" onClick={volverAComprar}>
+          Volver a comprar
+        </button>
       )}
 
       <Link to="/catalogo">Volver al catálogo</Link>
@@ -284,6 +324,25 @@ const Container = styled.div`
     text-align: right;
     margin-bottom: 24px;
     color: ${v.colorTexto};
+  }
+
+  .recomprar {
+    display: block;
+    width: 100%;
+    margin-bottom: 16px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid ${v.borderDorado};
+    background: rgba(243, 210, 12, 0.1);
+    color: ${v.colorPrincipal};
+    font-weight: 700;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: 0.2s;
+    &:hover {
+      background: rgba(243, 210, 12, 0.18);
+    }
   }
 
   .envio {

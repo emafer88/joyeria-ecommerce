@@ -2,6 +2,7 @@ import styled from "styled-components";
 import { Link } from "react-router-dom";
 import type { ProductoCatalogo } from "../../types/dominio";
 import { porcentajeDescuento } from "../../utils/precio";
+import { BotonFavorito } from "./BotonFavorito";
 import { v } from "../../styles/variables";
 
 interface Props {
@@ -25,6 +26,7 @@ export function TarjetaProducto({ producto }: Props) {
         ) : (
           <div className="sin-imagen">Sin imagen</div>
         )}
+        <BotonFavorito idProducto={producto.id} className="favorito" />
         {sinStock && <span className="badge-agotado">Agotado</span>}
         {!sinStock && enOferta && (
           <span className="badge-oferta">
@@ -102,6 +104,11 @@ const Container = styled(Link)`
       justify-content: center;
       color: ${v.colorTextoSuave2};
       font-size: 13px;
+    }
+    .favorito {
+      position: absolute;
+      top: 8px;
+      left: 8px;
     }
     .badge-agotado {
       position: absolute;
