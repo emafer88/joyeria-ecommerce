@@ -400,6 +400,13 @@ deno_version = 2
 [functions.liberar-reservas-vencidas]
 verify_jwt = false
 
+# Invocada por Mercado Pago (webhook externo), que no manda ningún JWT/apikey
+# de Supabase. El body nunca se usa como verdad por sí solo: siempre se
+# vuelve a consultar el pago real contra la API de Mercado Pago antes de
+# actuar (ver comentario al inicio de index.ts).
+[functions.webhook-mercadopago]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
