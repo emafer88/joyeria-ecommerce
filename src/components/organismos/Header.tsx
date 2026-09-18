@@ -79,6 +79,9 @@ export function Header() {
                     onClick={() => setMenuAbierto(false)}
                   />
                   <div className="menu">
+                    <Link to="/mi-perfil" onClick={() => setMenuAbierto(false)}>
+                      Mi perfil
+                    </Link>
                     <Link to="/mis-pedidos" onClick={() => setMenuAbierto(false)}>
                       Mis pedidos
                     </Link>
@@ -87,6 +90,12 @@ export function Header() {
                       onClick={() => setMenuAbierto(false)}
                     >
                       Mis direcciones
+                    </Link>
+                    <Link
+                      to="/mis-favoritos"
+                      onClick={() => setMenuAbierto(false)}
+                    >
+                      Mis favoritos
                     </Link>
                     <button type="button" onClick={salir}>
                       Salir
