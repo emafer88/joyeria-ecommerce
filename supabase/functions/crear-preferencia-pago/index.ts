@@ -269,7 +269,16 @@ Deno.serve(async (req) => {
     );
   }
 
-  const montoTotal = lineas.reduce((acc, l) => acc + l.precioVenta * l.cantidad, 0);
+  const subTotalProductos = lineas.reduce((acc, l) => acc + l.precioVenta * l.cantidad, 0);
+  // Costo de envío único, cargado por el admin (proyecto-joyeria →
+  // Configuraciones → Envío). 0 si no se configuró nada todavía.
+  const { data: empresaRow } = await supabaseAdmin
+    .from("empresa")
+    .select("costo_envio")
+    .eq("id", ID_EMPRESA)
+    .maybeSingle();
+  const costoEnvio = empresaRow?.costo_envio ?? 0;
+  const montoTotal = subTotalProductos + costoEnvio;
   const idOrdenExterna = crypto.randomUUID();
 
   // --- 2) Crear la venta "pendiente" ---
@@ -281,7 +290,7 @@ Deno.serve(async (req) => {
       id_empresa: ID_EMPRESA,
       id_cliente: idCliente,
       monto_total: montoTotal,
-      sub_total: montoTotal,
+      sub_total: subTotalProductos,
       total_impuestos: 0,
       valor_impuesto: 0,
       referencia_tarjeta: "-",
@@ -367,12 +376,17 @@ Deno.serve(async (req) => {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      items: lineas.map((l) => ({
-        title: l.nombre,
-        quantity: l.cantidad,
-        unit_price: l.precioVenta,
-        currency_id: MONEDA,
-      })),
+      items: [
+        ...lineas.map((l) => ({
+          title: l.nombre,
+          quantity: l.cantidad,
+          unit_price: l.precioVenta,
+          currency_id: MONEDA,
+        })),
+        ...(costoEnvio > 0
+          ? [{ title: "Envío", quantity: 1, unit_price: costoEnvio, currency_id: MONEDA }]
+          : []),
+      ],
       external_reference: idOrdenExterna,
       payer: {
         name: userNombre ?? envioSnapshot.destinatario,

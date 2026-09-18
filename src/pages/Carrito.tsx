@@ -4,6 +4,7 @@ import {
   useCarritoStore,
   useTotalCarrito,
 } from "../store/CarritoStore";
+import { useCostoEnvioQuery } from "../tanstack/CatalogoStack";
 import { claveCarritoItem } from "../types/dominio";
 import { v } from "../styles/variables";
 
@@ -12,7 +13,9 @@ export function Carrito() {
   const actualizarCantidad = useCarritoStore((s) => s.actualizarCantidad);
   const quitarItem = useCarritoStore((s) => s.quitarItem);
   const vaciar = useCarritoStore((s) => s.vaciar);
-  const total = useTotalCarrito();
+  const subtotal = useTotalCarrito();
+  const { data: costoEnvio = 0 } = useCostoEnvioQuery();
+  const total = subtotal + costoEnvio;
   const navigate = useNavigate();
 
   if (items.length === 0) {
@@ -27,7 +30,10 @@ export function Carrito() {
 
   return (
     <Container>
-      <h1>Tu carrito</h1>
+      <div className="encabezado">
+        <h1>Tu carrito</h1>
+        <Link to="/catalogo">Seguir comprando</Link>
+      </div>
 
       <ul className="items">
         {items.map((item) => {
@@ -80,7 +86,15 @@ export function Carrito() {
         <button type="button" className="vaciar" onClick={vaciar}>
           Vaciar carrito
         </button>
-        <span className="total">Total: $ {total.toLocaleString()}</span>
+        <div className="totales">
+          <span className="linea">
+            Subtotal: $ {subtotal.toLocaleString()}
+          </span>
+          <span className="linea">
+            Envío: $ {costoEnvio.toLocaleString()}
+          </span>
+          <span className="total">Total: $ {total.toLocaleString()}</span>
+        </div>
         <button
           type="button"
           className="checkout"
@@ -99,12 +113,21 @@ const Container = styled.div`
   padding: 32px 24px 60px;
 
   h1 {
-    margin: 0 0 24px;
+    margin: 0;
     font-size: 26px;
   }
 
   a {
     color: ${v.colorPrincipal};
+  }
+
+  .encabezado {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 24px;
   }
 
   .items {
@@ -194,6 +217,16 @@ const Container = styled.div`
     align-items: center;
     justify-content: space-between;
     gap: 14px;
+    .totales {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+    }
+    .linea {
+      font-size: 14px;
+      color: ${v.colorTextoSuave2};
+    }
     .total {
       font-size: 19px;
       font-weight: 700;

@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   MostrarBanners,
   MostrarCategorias,
+  MostrarCostoEnvio,
   MostrarEtiquetas,
   MostrarImagenesProducto,
   MostrarImagenesVariante,
@@ -22,6 +23,7 @@ export const K_CATEGORIAS = "ecommerce categorias";
 export const K_ETIQUETAS = "ecommerce etiquetas";
 export const K_MATERIALES = "ecommerce materiales";
 export const K_MARCAS = "ecommerce marcas";
+export const K_COSTO_ENVIO = "ecommerce costo envio";
 export const K_PRODUCTOS = "ecommerce productos";
 export const K_PRODUCTO_DETALLE = "ecommerce producto detalle";
 export const K_IMAGENES_PRODUCTO = "ecommerce imagenes producto";
@@ -61,6 +63,13 @@ export const useMarcasQuery = () =>
   useQuery({
     queryKey: [K_MARCAS],
     queryFn: MostrarMarcas,
+    staleTime: 5 * 60 * 1000,
+  });
+
+export const useCostoEnvioQuery = () =>
+  useQuery({
+    queryKey: [K_COSTO_ENVIO],
+    queryFn: MostrarCostoEnvio,
     staleTime: 5 * 60 * 1000,
   });
 

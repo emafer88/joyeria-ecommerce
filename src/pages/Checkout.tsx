@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useCarritoStore, useTotalCarrito } from "../store/CarritoStore";
 import { useCrearPreferenciaMutation } from "../tanstack/CheckoutStack";
+import { useCostoEnvioQuery } from "../tanstack/CatalogoStack";
 import { SelectorDireccion } from "../components/organismos/SelectorDireccion";
 import { claveCarritoItem } from "../types/dominio";
 import type { EnvioCheckout } from "../supabaseCrud/crudCheckout";
@@ -12,7 +13,9 @@ import { v } from "../styles/variables";
 export function Checkout() {
   const items = useCarritoStore((s) => s.items);
   const vaciar = useCarritoStore((s) => s.vaciar);
-  const total = useTotalCarrito();
+  const subtotal = useTotalCarrito();
+  const { data: costoEnvio = 0 } = useCostoEnvioQuery();
+  const total = subtotal + costoEnvio;
   const [enviando, setEnviando] = useState(false);
   const [envio, setEnvio] = useState<EnvioCheckout | null>(null);
 
@@ -67,7 +70,11 @@ export function Checkout() {
 
       <SelectorDireccion onEnvio={setEnvio} />
 
-      <div className="total">Total: $ {total.toLocaleString()}</div>
+      <div className="totales">
+        <div className="linea">Subtotal: $ {subtotal.toLocaleString()}</div>
+        <div className="linea">Envío: $ {costoEnvio.toLocaleString()}</div>
+        <div className="total">Total: $ {total.toLocaleString()}</div>
+      </div>
 
       <button
         type="button"
@@ -128,11 +135,22 @@ const Container = styled.div`
     }
   }
 
+  .totales {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+  }
+
+  .linea {
+    font-size: 14px;
+    color: ${v.colorTextoSuave2};
+  }
+
   .total {
     font-size: 20px;
     font-weight: 700;
-    text-align: right;
-    margin-bottom: 20px;
     color: ${v.colorTexto};
   }
 
