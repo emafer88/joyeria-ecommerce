@@ -8,6 +8,8 @@ import {
   MostrarEtiquetas,
   MostrarImagenesProducto,
   MostrarImagenesVariante,
+  MostrarMarcas,
+  MostrarMateriales,
   MostrarPiezasDisponibles,
   MostrarProductoDetalle,
   MostrarProductos,
@@ -18,6 +20,8 @@ import type { FiltrosCatalogo } from "../types/dominio";
 export const K_BANNERS = "ecommerce banners";
 export const K_CATEGORIAS = "ecommerce categorias";
 export const K_ETIQUETAS = "ecommerce etiquetas";
+export const K_MATERIALES = "ecommerce materiales";
+export const K_MARCAS = "ecommerce marcas";
 export const K_PRODUCTOS = "ecommerce productos";
 export const K_PRODUCTO_DETALLE = "ecommerce producto detalle";
 export const K_IMAGENES_PRODUCTO = "ecommerce imagenes producto";
@@ -43,6 +47,20 @@ export const useEtiquetasQuery = () =>
   useQuery({
     queryKey: [K_ETIQUETAS],
     queryFn: MostrarEtiquetas,
+    staleTime: 5 * 60 * 1000,
+  });
+
+export const useMaterialesQuery = () =>
+  useQuery({
+    queryKey: [K_MATERIALES],
+    queryFn: MostrarMateriales,
+    staleTime: 5 * 60 * 1000,
+  });
+
+export const useMarcasQuery = () =>
+  useQuery({
+    queryKey: [K_MARCAS],
+    queryFn: MostrarMarcas,
     staleTime: 5 * 60 * 1000,
   });
 

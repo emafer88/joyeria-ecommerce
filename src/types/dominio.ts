@@ -15,6 +15,11 @@ export interface EtiquetaCatalogo {
   nombre: string;
 }
 
+export interface MarcaCatalogo {
+  id: number;
+  nombre: string;
+}
+
 export interface ProductoCatalogo {
   id: number;
   nombre: string;
@@ -108,6 +113,11 @@ export interface FiltrosCatalogo {
   precioMin: number | null;
   precioMax: number | null;
   buscador: string | null;
+  idMarca: number | null;
+  pesoMin: number | null;
+  pesoMax: number | null;
+  talla: string | null;
+  soloDisponibles: boolean;
   pagina: number;
   tamPagina: number;
 }
