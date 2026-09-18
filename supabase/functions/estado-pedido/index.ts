@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
 
   const { data: venta } = await supabaseAdmin
     .from("ventas")
-    .select("id, estado, monto_total, nro_comprobante")
+    .select("id, estado, monto_total, nro_comprobante, estado_envio, metodo_pago")
     .eq("origen", CANAL)
     .eq("id_orden_externa", idOrdenExterna)
     .maybeSingle();
@@ -46,6 +46,8 @@ Deno.serve(async (req) => {
     estado: venta.estado,
     nroComprobante: venta.nro_comprobante,
     montoTotal: venta.monto_total,
+    estadoEnvio: venta.estado_envio,
+    metodoPago: venta.metodo_pago,
     items: (detalle ?? []).map((d) => ({
       // @ts-ignore -- select anidado de supabase-js
       nombre: d.productos?.nombre ?? d.descripcion ?? "Producto",

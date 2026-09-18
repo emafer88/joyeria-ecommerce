@@ -16,6 +16,25 @@ const ICONOS: Record<string, string> = {
   anulada: "✕",
 };
 
+const PASOS_ENVIO = ["Pago recibido", "Preparando", "Enviado", "Entregado"];
+
+function pasoActual(estadoEnvio: string | null): number {
+  if (estadoEnvio === "preparando") return 1;
+  if (estadoEnvio === "enviado") return 2;
+  if (estadoEnvio === "entregado") return 3;
+  return 0;
+}
+
+const METODOS_PAGO: Record<string, string> = {
+  credit_card: "Tarjeta de crédito",
+  debit_card: "Tarjeta de débito",
+  prepaid_card: "Tarjeta prepaga",
+  account_money: "Dinero en cuenta de Mercado Pago",
+  ticket: "Efectivo / Ticket",
+  bank_transfer: "Transferencia bancaria",
+  digital_currency: "Billetera digital",
+};
+
 export function EstadoPedidoPagina() {
   const { idOrdenExterna } = useParams<{ idOrdenExterna: string }>();
   const { data, isLoading, isError } = useEstadoPedidoQuery(idOrdenExterna);
@@ -29,16 +48,41 @@ export function EstadoPedidoPagina() {
       </Container>
     );
 
+  const paso = data.estado === "confirmada" ? pasoActual(data.estadoEnvio) : null;
+
   return (
     <Container>
-      <span className={`icono icono--${data.estado}`}>
-        {ICONOS[data.estado] ?? ""}
-      </span>
-      <span className={`etiqueta etiqueta--${data.estado}`}>
-        {ETIQUETAS[data.estado] ?? data.estado}
-      </span>
+      {paso === null ? (
+        <>
+          <span className={`icono icono--${data.estado}`}>
+            {ICONOS[data.estado] ?? ""}
+          </span>
+          <span className={`etiqueta etiqueta--${data.estado}`}>
+            {ETIQUETAS[data.estado] ?? data.estado}
+          </span>
+        </>
+      ) : (
+        <ol className="tracker">
+          {PASOS_ENVIO.map((nombre, i) => (
+            <li
+              key={nombre}
+              className={
+                i < paso ? "hecho" : i === paso ? "actual" : "pendiente"
+              }
+            >
+              <span className="punto">{i < paso ? "✓" : i + 1}</span>
+              <span className="nombre">{nombre}</span>
+            </li>
+          ))}
+        </ol>
+      )}
       {data.nroComprobante && (
         <p className="comprobante">Número de pedido: {data.nroComprobante}</p>
+      )}
+      {data.metodoPago && (
+        <p className="metodo-pago">
+          Método de pago: {METODOS_PAGO[data.metodoPago] ?? data.metodoPago}
+        </p>
       )}
 
       <ul className="items">
@@ -137,8 +181,77 @@ const Container = styled.div`
     }
   }
 
+  .tracker {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    li {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      text-align: center;
+      position: relative;
+
+      &:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        top: 14px;
+        left: 50%;
+        width: 100%;
+        height: 2px;
+        background: ${v.borderSutil};
+        z-index: 0;
+      }
+      &.hecho:not(:last-child)::after {
+        background: ${v.borderDorado};
+      }
+    }
+
+    .punto {
+      z-index: 1;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      background: ${v.bgTarjeta};
+      border: 1px solid ${v.borderSutil};
+      color: ${v.colorTextoSuave2};
+    }
+    .nombre {
+      font-size: 11.5px;
+      color: ${v.colorTextoSuave2};
+    }
+
+    li.hecho .punto,
+    li.actual .punto {
+      border-color: ${v.borderDorado};
+      color: ${v.colorPrincipal};
+      background: rgba(243, 210, 12, 0.12);
+    }
+    li.hecho .nombre,
+    li.actual .nombre {
+      color: ${v.colorTexto};
+      font-weight: 600;
+    }
+  }
+
   .comprobante {
     color: ${v.colorTextoSuave};
+  }
+
+  .metodo-pago {
+    color: ${v.colorTextoSuave};
+    margin-top: -8px;
   }
 
   .items {

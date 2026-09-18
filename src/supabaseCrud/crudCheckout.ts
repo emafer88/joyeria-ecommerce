@@ -49,6 +49,9 @@ export interface EstadoPedido {
   montoTotal: number;
   items: ItemPedido[];
   envio: EnvioSnapshot | null;
+  /** null/'preparando'/'enviado'/'entregado', solo relevante si estado === 'confirmada'. */
+  estadoEnvio: string | null;
+  metodoPago: string | null;
 }
 
 function itemsParaEdgeFunction(items: CarritoItem[]) {

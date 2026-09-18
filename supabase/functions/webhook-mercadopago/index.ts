@@ -75,6 +75,14 @@ Deno.serve(async (req) => {
   }
 
   if (estado === "approved") {
+    // Método de pago real (tarjeta/efectivo/etc.), para mostrarle al
+    // comprador en su pedido — antes se descartaba del todo.
+    await supabaseAdmin
+      .from("ventas")
+      .update({ metodo_pago: pago.payment_type_id ?? null })
+      .eq("origen", CANAL)
+      .eq("id_orden_externa", idOrdenExterna);
+
     const { error } = await supabaseAdmin.rpc("crear_venta_externa_piezas", {
       _canal: CANAL,
       _id_orden_externa: idOrdenExterna,

@@ -37,5 +37,6 @@ export async function MostrarMisPedidos(): Promise<PedidoResumen[]> {
     montoTotal: p.monto_total,
     nroComprobante: p.nro_comprobante,
     cantidadProductos: p.cantidad_productos,
+    estadoEnvio: p.estado_envio,
   }));
 }
