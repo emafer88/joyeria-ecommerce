@@ -2,18 +2,17 @@ import styled from "styled-components";
 import {
   useCategoriasQuery,
   useEtiquetasQuery,
+  useMarcasQuery,
+  useMaterialesQuery,
 } from "../../tanstack/CatalogoStack";
 import { useFiltrosCatalogoStore } from "../../store/FiltrosCatalogoStore";
 import { v } from "../../styles/variables";
 
-// Materiales de joyería con los que se cargan las variantes en el POS. El RPC
-// `ecommerce_listar_productos` matchea `producto_variantes.material` con ILIKE,
-// así que alcanza con estos valores fijos (backlog: `ecommerce_listar_materiales`).
-const MATERIALES = ["Oro", "Plata", "Acero", "Fantasía"];
-
 export function FiltrosCatalogo() {
   const { data: categorias, isLoading } = useCategoriasQuery();
   const { data: etiquetas } = useEtiquetasQuery();
+  const { data: materiales } = useMaterialesQuery();
+  const { data: marcas } = useMarcasQuery();
   const {
     filtros,
     setCategoria,
@@ -21,6 +20,10 @@ export function FiltrosCatalogo() {
     setEtiqueta,
     setBuscador,
     setRangoPrecio,
+    setMarca,
+    setRangoPeso,
+    setTalla,
+    setSoloDisponibles,
     limpiarFiltros,
   } = useFiltrosCatalogoStore();
 
@@ -64,13 +67,33 @@ export function FiltrosCatalogo() {
           onChange={(e) => setMaterial(e.target.value || null)}
         >
           <option value="">Todos</option>
-          {MATERIALES.map((m) => (
+          {materiales?.map((m) => (
             <option key={m} value={m}>
               {m}
             </option>
           ))}
         </select>
       </div>
+
+      {marcas && marcas.length > 0 && (
+        <div className="campo">
+          <label htmlFor="marca">Colección</label>
+          <select
+            id="marca"
+            value={filtros.idMarca ?? ""}
+            onChange={(e) =>
+              setMarca(e.target.value ? Number(e.target.value) : null)
+            }
+          >
+            <option value="">Todas</option>
+            {marcas.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {etiquetas && etiquetas.length > 0 && (
         <div className="campo">
@@ -120,6 +143,55 @@ export function FiltrosCatalogo() {
           />
         </div>
       </div>
+
+      <div className="campo campo--rango">
+        <label>Peso (g)</label>
+        <div className="rango">
+          <input
+            type="number"
+            placeholder="Min"
+            defaultValue={filtros.pesoMin ?? ""}
+            onChange={(e) =>
+              setRangoPeso(
+                e.target.value ? Number(e.target.value) : null,
+                filtros.pesoMax
+              )
+            }
+          />
+          <span>-</span>
+          <input
+            type="number"
+            placeholder="Max"
+            defaultValue={filtros.pesoMax ?? ""}
+            onChange={(e) =>
+              setRangoPeso(
+                filtros.pesoMin,
+                e.target.value ? Number(e.target.value) : null
+              )
+            }
+          />
+        </div>
+      </div>
+
+      <div className="campo">
+        <label htmlFor="talla">Talla</label>
+        <input
+          id="talla"
+          type="text"
+          placeholder="Ej. 7, M..."
+          defaultValue={filtros.talla ?? ""}
+          onChange={(e) => setTalla(e.target.value || null)}
+        />
+      </div>
+
+      <label className="campo--check">
+        <input
+          type="checkbox"
+          checked={filtros.soloDisponibles}
+          onChange={(e) => setSoloDisponibles(e.target.checked)}
+        />
+        Solo disponibles
+      </label>
 
       <button type="button" className="limpiar" onClick={limpiarFiltros}>
         Limpiar filtros
@@ -177,6 +249,18 @@ const Container = styled.aside`
     color: ${v.colorTextoSuave2};
     input {
       width: 100%;
+    }
+  }
+
+  .campo--check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: ${v.colorTextoSuave};
+    cursor: pointer;
+    input {
+      accent-color: ${v.colorPrincipal};
     }
   }
 

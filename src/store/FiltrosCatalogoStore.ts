@@ -11,6 +11,11 @@ const FILTROS_INICIALES: FiltrosCatalogo = {
   precioMin: null,
   precioMax: null,
   buscador: null,
+  idMarca: null,
+  pesoMin: null,
+  pesoMax: null,
+  talla: null,
+  soloDisponibles: false,
   pagina: 1,
   tamPagina: 24,
 };
@@ -22,6 +27,10 @@ interface FiltrosCatalogoState {
   setEtiqueta: (idEtiqueta: number | null) => void;
   setRangoPrecio: (min: number | null, max: number | null) => void;
   setBuscador: (buscador: string | null) => void;
+  setMarca: (idMarca: number | null) => void;
+  setRangoPeso: (min: number | null, max: number | null) => void;
+  setTalla: (talla: string | null) => void;
+  setSoloDisponibles: (soloDisponibles: boolean) => void;
   setPagina: (pagina: number) => void;
   limpiarFiltros: () => void;
 }
@@ -38,6 +47,14 @@ export const useFiltrosCatalogoStore = create<FiltrosCatalogoState>((set) => ({
     set((s) => ({ filtros: { ...s.filtros, precioMin, precioMax, pagina: 1 } })),
   setBuscador: (buscador) =>
     set((s) => ({ filtros: { ...s.filtros, buscador, pagina: 1 } })),
+  setMarca: (idMarca) =>
+    set((s) => ({ filtros: { ...s.filtros, idMarca, pagina: 1 } })),
+  setRangoPeso: (pesoMin, pesoMax) =>
+    set((s) => ({ filtros: { ...s.filtros, pesoMin, pesoMax, pagina: 1 } })),
+  setTalla: (talla) =>
+    set((s) => ({ filtros: { ...s.filtros, talla, pagina: 1 } })),
+  setSoloDisponibles: (soloDisponibles) =>
+    set((s) => ({ filtros: { ...s.filtros, soloDisponibles, pagina: 1 } })),
   setPagina: (pagina) => set((s) => ({ filtros: { ...s.filtros, pagina } })),
   limpiarFiltros: () => set({ filtros: FILTROS_INICIALES }),
 }));

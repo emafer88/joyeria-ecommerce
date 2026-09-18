@@ -8,6 +8,7 @@ import type {
   EtiquetaCatalogo,
   FiltrosCatalogo,
   ImagenProducto,
+  MarcaCatalogo,
   PaginaProductos,
   PiezaDisponible,
   ProductoCatalogo,
@@ -32,6 +33,18 @@ export async function MostrarEtiquetas(): Promise<EtiquetaCatalogo[]> {
   return (data ?? []).map((e) => ({ id: e.id, nombre: e.nombre }));
 }
 
+export async function MostrarMateriales(): Promise<string[]> {
+  const { data, error } = await supabase.rpc("ecommerce_listar_materiales");
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((m) => m.material);
+}
+
+export async function MostrarMarcas(): Promise<MarcaCatalogo[]> {
+  const { data, error } = await supabase.rpc("ecommerce_listar_marcas");
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((m) => ({ id: m.id, nombre: m.nombre }));
+}
+
 export async function MostrarProductos(
   filtros: FiltrosCatalogo
 ): Promise<PaginaProductos> {
@@ -44,6 +57,11 @@ export async function MostrarProductos(
     _buscador: filtros.buscador ?? undefined,
     _pagina: filtros.pagina,
     _tam_pagina: filtros.tamPagina,
+    _id_marca: filtros.idMarca ?? undefined,
+    _peso_min: filtros.pesoMin ?? undefined,
+    _peso_max: filtros.pesoMax ?? undefined,
+    _talla: filtros.talla ?? undefined,
+    _solo_disponibles: filtros.soloDisponibles ? true : undefined,
   });
   if (error) throw new Error(error.message);
 
