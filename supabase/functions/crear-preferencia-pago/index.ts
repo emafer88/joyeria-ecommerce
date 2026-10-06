@@ -144,6 +144,14 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return respuestaCors();
   if (req.method !== "POST") return json({ error: "método no permitido" }, 405);
 
+  // Cuenta suspendida o plan sin tienda (tabla licencia): no se cobra nada.
+  // Si no se puede leer la licencia se sigue, para no tirar el checkout por
+  // un error pasajero; la base igual bloquea lo demás.
+  const { data: licencia } = await supabaseAdmin.rpc("licencia_estado");
+  if (licencia?.suspendida || licencia?.plan === "basico") {
+    return json({ error: "la tienda no está disponible por el momento" }, 403);
+  }
+
   let body: { items?: ItemRequest[]; envio?: EnvioRequest; cliente?: ClienteRequest };
   try {
     body = await req.json();
