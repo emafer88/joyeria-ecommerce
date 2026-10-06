@@ -125,6 +125,8 @@ SELECT u.id_usuario, m.id
 FROM (VALUES (1), (4)) AS u(id_usuario)
 CROSS JOIN public.modulos m
 WHERE m.link = '/pedidos'
+  -- En una base nueva esos usuarios no existen.
+  AND EXISTS (SELECT 1 FROM public.usuarios x WHERE x.id = u.id_usuario)
   AND NOT EXISTS (
     SELECT 1 FROM public.permisos p
     WHERE p.id_usuario = u.id_usuario AND p.idmodulo = m.id
