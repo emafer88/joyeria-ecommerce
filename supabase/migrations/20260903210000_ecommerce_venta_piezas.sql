@@ -218,7 +218,9 @@ GRANT EXECUTE ON FUNCTION public.ecommerce_liberar_reservas_vencidas(integer) TO
 INSERT INTO public.serializacion_comprobantes
     (id_tipo_comprobante, serie, cantidad_numeros, correlativo, sucursal_id, por_default)
 SELECT 2, 'WEB', 8, 0, 1, false
-WHERE NOT EXISTS (
+-- En una base nueva todavía no hay sucursal 1: la serie la crea el instalador.
+WHERE EXISTS (SELECT 1 FROM public.sucursales WHERE id = 1)
+  AND NOT EXISTS (
     SELECT 1 FROM public.serializacion_comprobantes
      WHERE id_tipo_comprobante = 2 AND serie = 'WEB' AND sucursal_id = 1
 );
