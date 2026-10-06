@@ -5,8 +5,23 @@ import { GlobalStyles } from "./styles/GlobalStyles";
 import { AppRouter } from "./router/AppRouter";
 import { Header } from "./components/organismos/Header";
 import { Footer } from "./components/organismos/Footer";
+import { useTiendaDisponibleQuery } from "./tanstack/LicenciaStack";
+import { TiendaNoDisponible } from "./pages/TiendaNoDisponible";
 
 const queryClient = new QueryClient();
+
+// Cuenta suspendida o plan sin tienda: solo el aviso, nada del catálogo.
+function Tienda() {
+  const { disponible } = useTiendaDisponibleQuery();
+  if (!disponible) return <TiendaNoDisponible />;
+  return (
+    <>
+      <Header />
+      <AppRouter />
+      <Footer />
+    </>
+  );
+}
 
 function App() {
   return (
@@ -14,9 +29,7 @@ function App() {
       <GlobalStyles />
       <Toaster />
       <BrowserRouter>
-        <Header />
-        <AppRouter />
-        <Footer />
+        <Tienda />
       </BrowserRouter>
     </QueryClientProvider>
   );
