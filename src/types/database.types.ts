@@ -10,10 +10,43 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
+      admin_notificacion_pedido_leida: {
+        Row: {
+          id_usuario: number
+          id_venta: number
+          leida_at: string
+        }
+        Insert: {
+          id_usuario: number
+          id_venta: number
+          leida_at?: string
+        }
+        Update: {
+          id_usuario?: number
+          id_venta?: number
+          leida_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_notificacion_pedido_leida_id_usuario_fkey"
+            columns: ["id_usuario"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_notificacion_pedido_leida_id_venta_fkey"
+            columns: ["id_venta"]
+            isOneToOne: false
+            referencedRelation: "ventas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       almacen: {
         Row: {
           default: boolean | null
@@ -88,6 +121,56 @@ export type Database = {
             columns: ["id_usuario"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      banners: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: number
+          id_empresa: number
+          imagen_path: string
+          imagen_url: string
+          link_destino: string | null
+          orden: number
+          subtitulo: string | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: number
+          id_empresa: number
+          imagen_path: string
+          imagen_url: string
+          link_destino?: string | null
+          orden?: number
+          subtitulo?: string | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: number
+          id_empresa?: number
+          imagen_path?: string
+          imagen_url?: string
+          link_destino?: string | null
+          orden?: number
+          subtitulo?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banners_id_empresa_fkey"
+            columns: ["id_empresa"]
+            isOneToOne: false
+            referencedRelation: "empresa"
             referencedColumns: ["id"]
           },
         ]
@@ -354,6 +437,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "detalle_venta_id_pieza_fkey"
+            columns: ["id_pieza"]
+            isOneToOne: false
+            referencedRelation: "piezas_inventario_v"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "detalle_venta_id_sucursal_fkey"
             columns: ["id_sucursal"]
             isOneToOne: false
@@ -368,10 +458,55 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "public_detalle_venta_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos_v"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "public_detalle_venta_id_venta_fkey"
             columns: ["id_venta"]
             isOneToOne: false
             referencedRelation: "ventas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ecommerce_cliente_perfil: {
+        Row: {
+          created_at: string
+          email: string | null
+          id_cliente: number
+          id_empresa: number
+          nombre: string | null
+          telefono: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id_cliente: number
+          id_empresa: number
+          nombre?: string | null
+          telefono?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id_cliente?: number
+          id_empresa?: number
+          nombre?: string | null
+          telefono?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ecommerce_cliente_perfil_id_cliente_fkey"
+            columns: ["id_cliente"]
+            isOneToOne: false
+            referencedRelation: "clientes_proveedores"
             referencedColumns: ["id"]
           },
         ]
@@ -442,9 +577,164 @@ export type Database = {
         }
         Relationships: []
       }
+      ecommerce_favorito: {
+        Row: {
+          created_at: string
+          id_producto: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id_producto: number
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id_producto?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ecommerce_favorito_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ecommerce_favorito_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ecommerce_orden_envio: {
+        Row: {
+          calle: string
+          colonia: string
+          cp: string
+          created_at: string
+          destinatario: string
+          email: string | null
+          entre_calles: string | null
+          estado: string
+          id_orden_externa: string
+          lat: number | null
+          lng: number | null
+          municipio: string
+          numero_exterior: string
+          numero_interior: string | null
+          referencias: string | null
+          telefono: string
+          user_id: string | null
+        }
+        Insert: {
+          calle: string
+          colonia: string
+          cp: string
+          created_at?: string
+          destinatario: string
+          email?: string | null
+          entre_calles?: string | null
+          estado: string
+          id_orden_externa: string
+          lat?: number | null
+          lng?: number | null
+          municipio: string
+          numero_exterior: string
+          numero_interior?: string | null
+          referencias?: string | null
+          telefono: string
+          user_id?: string | null
+        }
+        Update: {
+          calle?: string
+          colonia?: string
+          cp?: string
+          created_at?: string
+          destinatario?: string
+          email?: string | null
+          entre_calles?: string | null
+          estado?: string
+          id_orden_externa?: string
+          lat?: number | null
+          lng?: number | null
+          municipio?: string
+          numero_exterior?: string
+          numero_interior?: string | null
+          referencias?: string | null
+          telefono?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      ecommerce_orden_items: {
+        Row: {
+          cantidad: number
+          created_at: string
+          descripcion: string | null
+          id: number
+          id_almacen: number
+          id_orden_externa: string
+          id_producto: number
+          origen: string
+          precio_compra: number | null
+          precio_venta: number
+        }
+        Insert: {
+          cantidad: number
+          created_at?: string
+          descripcion?: string | null
+          id?: never
+          id_almacen: number
+          id_orden_externa: string
+          id_producto: number
+          origen: string
+          precio_compra?: number | null
+          precio_venta: number
+        }
+        Update: {
+          cantidad?: number
+          created_at?: string
+          descripcion?: string | null
+          id?: never
+          id_almacen?: number
+          id_orden_externa?: string
+          id_producto?: number
+          origen?: string
+          precio_compra?: number | null
+          precio_venta?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ecommerce_orden_items_id_almacen_fkey"
+            columns: ["id_almacen"]
+            isOneToOne: false
+            referencedRelation: "almacen"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ecommerce_orden_items_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ecommerce_orden_items_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       empresa: {
         Row: {
           correo: string | null
+          costo_envio: number
           currency: string | null
           direccion_fiscal: string | null
           id: number
@@ -463,6 +753,7 @@ export type Database = {
         }
         Insert: {
           correo?: string | null
+          costo_envio?: number
           currency?: string | null
           direccion_fiscal?: string | null
           id?: number
@@ -481,6 +772,7 @@ export type Database = {
         }
         Update: {
           correo?: string | null
+          costo_envio?: number
           currency?: string | null
           direccion_fiscal?: string | null
           id?: number
@@ -503,6 +795,35 @@ export type Database = {
             columns: ["id_usuario"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      etiquetas: {
+        Row: {
+          created_at: string
+          id: number
+          id_empresa: number
+          nombre: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          id_empresa: number
+          nombre: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          id_empresa?: number
+          nombre?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "etiquetas_id_empresa_fkey"
+            columns: ["id_empresa"]
+            isOneToOne: false
+            referencedRelation: "empresa"
             referencedColumns: ["id"]
           },
         ]
@@ -594,10 +915,76 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "public_kardex_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos_v"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "public_kardex_id_usuario_fkey"
             columns: ["id_usuario"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      licencia: {
+        Row: {
+          actualizado: string
+          id: number
+          mensaje_suspension: string | null
+          plan: string
+          suspendida: boolean
+          url_proyecto: string | null
+        }
+        Insert: {
+          actualizado?: string
+          id?: number
+          mensaje_suspension?: string | null
+          plan?: string
+          suspendida?: boolean
+          url_proyecto?: string | null
+        }
+        Update: {
+          actualizado?: string
+          id?: number
+          mensaje_suspension?: string | null
+          plan?: string
+          suspendida?: boolean
+          url_proyecto?: string | null
+        }
+        Relationships: []
+      }
+      marca: {
+        Row: {
+          created_at: string
+          id: number
+          id_empresa: number
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          id_empresa: number
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          id_empresa?: number
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marca_id_empresa_fkey"
+            columns: ["id_empresa"]
+            isOneToOne: false
+            referencedRelation: "empresa"
             referencedColumns: ["id"]
           },
         ]
@@ -633,6 +1020,182 @@ export type Database = {
             columns: ["id_empresa"]
             isOneToOne: false
             referencedRelation: "empresa"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ml_config_producto: {
+        Row: {
+          atributos: Json
+          id_producto: number
+          ml_category_id: string
+          publicar: boolean
+          updated_at: string
+        }
+        Insert: {
+          atributos?: Json
+          id_producto: number
+          ml_category_id: string
+          publicar?: boolean
+          updated_at?: string
+        }
+        Update: {
+          atributos?: Json
+          id_producto?: number
+          ml_category_id?: string
+          publicar?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ml_config_producto_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: true
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ml_config_producto_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: true
+            referencedRelation: "productos_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ml_cuenta: {
+        Row: {
+          access_token: string
+          expira_en: string
+          id: number
+          ml_user_id: number
+          refresh_token: string
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          expira_en: string
+          id?: number
+          ml_user_id: number
+          refresh_token: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          expira_en?: string
+          id?: number
+          ml_user_id?: number
+          refresh_token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ml_ordenes: {
+        Row: {
+          comprador: string | null
+          created_at: string
+          estado_ml: string
+          id_venta: number | null
+          ml_order_id: number
+          pack_id: number | null
+          total: number | null
+          ultimo_error: string | null
+          updated_at: string
+        }
+        Insert: {
+          comprador?: string | null
+          created_at?: string
+          estado_ml: string
+          id_venta?: number | null
+          ml_order_id: number
+          pack_id?: number | null
+          total?: number | null
+          ultimo_error?: string | null
+          updated_at?: string
+        }
+        Update: {
+          comprador?: string | null
+          created_at?: string
+          estado_ml?: string
+          id_venta?: number | null
+          ml_order_id?: number
+          pack_id?: number | null
+          total?: number | null
+          ultimo_error?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ml_ordenes_id_venta_fkey"
+            columns: ["id_venta"]
+            isOneToOne: false
+            referencedRelation: "ventas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ml_publicaciones: {
+        Row: {
+          cantidad_publicada: number | null
+          clave_grupo: string
+          creando_desde: string | null
+          created_at: string
+          estado_ml: string | null
+          id: number
+          id_producto: number
+          ml_item_id: string | null
+          ml_user_product_id: string | null
+          modelo: string
+          precio_publicado: number | null
+          sincronizado_en: string | null
+          ultimo_error: string | null
+          updated_at: string
+        }
+        Insert: {
+          cantidad_publicada?: number | null
+          clave_grupo: string
+          creando_desde?: string | null
+          created_at?: string
+          estado_ml?: string | null
+          id?: number
+          id_producto: number
+          ml_item_id?: string | null
+          ml_user_product_id?: string | null
+          modelo: string
+          precio_publicado?: number | null
+          sincronizado_en?: string | null
+          ultimo_error?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cantidad_publicada?: number | null
+          clave_grupo?: string
+          creando_desde?: string | null
+          created_at?: string
+          estado_ml?: string | null
+          id?: number
+          id_producto?: number
+          ml_item_id?: string | null
+          ml_user_product_id?: string | null
+          modelo?: string
+          precio_publicado?: number | null
+          sincronizado_en?: string | null
+          ultimo_error?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ml_publicaciones_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ml_publicaciones_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos_v"
             referencedColumns: ["id"]
           },
         ]
@@ -794,6 +1357,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "movimientos_piezas_id_pieza_fkey"
+            columns: ["id_pieza"]
+            isOneToOne: false
+            referencedRelation: "piezas_inventario_v"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "movimientos_piezas_id_usuario_fkey"
             columns: ["id_usuario"]
             isOneToOne: false
@@ -848,6 +1418,13 @@ export type Database = {
             referencedRelation: "productos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "movimientos_stock_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos_v"
+            referencedColumns: ["id"]
+          },
         ]
       }
       multiprecios: {
@@ -875,6 +1452,13 @@ export type Database = {
             columns: ["id_producto"]
             isOneToOne: false
             referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "multiprecios_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos_v"
             referencedColumns: ["id"]
           },
         ]
@@ -955,13 +1539,17 @@ export type Database = {
           id_almacen: number | null
           id_detalle_venta: number | null
           id_empresa: number
+          id_grupo: number | null
           id_producto: number
           id_variante: number
           id_venta_reserva: number | null
+          medidas: string | null
           nota: string | null
           peso: number
+          precio_oferta: number | null
           precio_venta: number
           sku: string
+          talla: string | null
           updated_at: string
         }
         Insert: {
@@ -973,13 +1561,17 @@ export type Database = {
           id_almacen?: number | null
           id_detalle_venta?: number | null
           id_empresa: number
+          id_grupo?: number | null
           id_producto: number
           id_variante: number
           id_venta_reserva?: number | null
+          medidas?: string | null
           nota?: string | null
           peso: number
+          precio_oferta?: number | null
           precio_venta: number
           sku: string
+          talla?: string | null
           updated_at?: string
         }
         Update: {
@@ -991,13 +1583,17 @@ export type Database = {
           id_almacen?: number | null
           id_detalle_venta?: number | null
           id_empresa?: number
+          id_grupo?: number | null
           id_producto?: number
           id_variante?: number
           id_venta_reserva?: number | null
+          medidas?: string | null
           nota?: string | null
           peso?: number
+          precio_oferta?: number | null
           precio_venta?: number
           sku?: string
+          talla?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1016,6 +1612,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "piezas_inventario_id_detalle_venta_fkey"
+            columns: ["id_detalle_venta"]
+            isOneToOne: false
+            referencedRelation: "detalle_venta_v"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "piezas_inventario_id_empresa_fkey"
             columns: ["id_empresa"]
             isOneToOne: false
@@ -1030,6 +1633,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "piezas_inventario_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos_v"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "piezas_inventario_id_variante_fkey"
             columns: ["id_variante"]
             isOneToOne: false
@@ -1037,10 +1647,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "piezas_inventario_id_variante_fkey"
+            columns: ["id_variante"]
+            isOneToOne: false
+            referencedRelation: "producto_variantes_v"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "piezas_inventario_id_venta_reserva_fkey"
             columns: ["id_venta_reserva"]
             isOneToOne: false
             referencedRelation: "ventas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      producto_etiquetas: {
+        Row: {
+          id_etiqueta: number
+          id_producto: number
+        }
+        Insert: {
+          id_etiqueta: number
+          id_producto: number
+        }
+        Update: {
+          id_etiqueta?: number
+          id_producto?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "producto_etiquetas_id_etiqueta_fkey"
+            columns: ["id_etiqueta"]
+            isOneToOne: false
+            referencedRelation: "etiquetas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "producto_etiquetas_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "producto_etiquetas_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos_v"
             referencedColumns: ["id"]
           },
         ]
@@ -1078,6 +1732,13 @@ export type Database = {
             referencedRelation: "productos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "producto_imagenes_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos_v"
+            referencedColumns: ["id"]
+          },
         ]
       }
       producto_variante_imagenes: {
@@ -1111,6 +1772,13 @@ export type Database = {
             columns: ["id_variante"]
             isOneToOne: false
             referencedRelation: "producto_variantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "producto_variante_imagenes_id_variante_fkey"
+            columns: ["id_variante"]
+            isOneToOne: false
+            referencedRelation: "producto_variantes_v"
             referencedColumns: ["id"]
           },
         ]
@@ -1173,6 +1841,13 @@ export type Database = {
             referencedRelation: "productos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "producto_variantes_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos_v"
+            referencedColumns: ["id"]
+          },
         ]
       }
       productos: {
@@ -1182,6 +1857,7 @@ export type Database = {
           codigo_interno: string | null
           created_at: string
           descripcion: string | null
+          destacado: boolean
           es_joyeria: boolean
           id: number
           id_categoria: number | null
@@ -1189,10 +1865,15 @@ export type Database = {
           id_marca: number | null
           maneja_inventarios: boolean | null
           maneja_multiprecios: boolean | null
+          medidas: string | null
           nombre: string
+          oferta_desde: string | null
+          oferta_hasta: string | null
           precio_compra: number | null
+          precio_oferta: number | null
           precio_venta: number | null
           sevende_por: string | null
+          tallas: string | null
           updated_at: string
         }
         Insert: {
@@ -1201,6 +1882,7 @@ export type Database = {
           codigo_interno?: string | null
           created_at?: string
           descripcion?: string | null
+          destacado?: boolean
           es_joyeria?: boolean
           id?: number
           id_categoria?: number | null
@@ -1208,10 +1890,15 @@ export type Database = {
           id_marca?: number | null
           maneja_inventarios?: boolean | null
           maneja_multiprecios?: boolean | null
+          medidas?: string | null
           nombre: string
+          oferta_desde?: string | null
+          oferta_hasta?: string | null
           precio_compra?: number | null
+          precio_oferta?: number | null
           precio_venta?: number | null
           sevende_por?: string | null
+          tallas?: string | null
           updated_at?: string
         }
         Update: {
@@ -1220,6 +1907,7 @@ export type Database = {
           codigo_interno?: string | null
           created_at?: string
           descripcion?: string | null
+          destacado?: boolean
           es_joyeria?: boolean
           id?: number
           id_categoria?: number | null
@@ -1227,10 +1915,15 @@ export type Database = {
           id_marca?: number | null
           maneja_inventarios?: boolean | null
           maneja_multiprecios?: boolean | null
+          medidas?: string | null
           nombre?: string
+          oferta_desde?: string | null
+          oferta_hasta?: string | null
           precio_compra?: number | null
+          precio_oferta?: number | null
           precio_venta?: number | null
           sevende_por?: string | null
+          tallas?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1348,6 +2041,13 @@ export type Database = {
             columns: ["id_producto"]
             isOneToOne: false
             referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos_v"
             referencedColumns: ["id"]
           },
         ]
@@ -1482,6 +2182,7 @@ export type Database = {
         Row: {
           cantidad_productos: number | null
           estado: string | null
+          estado_envio: string | null
           fecha: string
           id: number
           id_cierre_caja: number | null
@@ -1490,6 +2191,7 @@ export type Database = {
           id_orden_externa: string | null
           id_sucursal: number | null
           id_usuario: number | null
+          metodo_pago: string | null
           monto_total: number | null
           nro_comprobante: string | null
           origen: string
@@ -1504,6 +2206,7 @@ export type Database = {
         Insert: {
           cantidad_productos?: number | null
           estado?: string | null
+          estado_envio?: string | null
           fecha?: string
           id?: number
           id_cierre_caja?: number | null
@@ -1512,6 +2215,7 @@ export type Database = {
           id_orden_externa?: string | null
           id_sucursal?: number | null
           id_usuario?: number | null
+          metodo_pago?: string | null
           monto_total?: number | null
           nro_comprobante?: string | null
           origen?: string
@@ -1526,6 +2230,7 @@ export type Database = {
         Update: {
           cantidad_productos?: number | null
           estado?: string | null
+          estado_envio?: string | null
           fecha?: string
           id?: number
           id_cierre_caja?: number | null
@@ -1534,6 +2239,7 @@ export type Database = {
           id_orden_externa?: string | null
           id_sucursal?: number | null
           id_usuario?: number | null
+          metodo_pago?: string | null
           monto_total?: number | null
           nro_comprobante?: string | null
           origen?: string
@@ -1571,21 +2277,492 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      detalle_venta_v: {
+        Row: {
+          cantidad: number | null
+          descripcion: string | null
+          estado: string | null
+          id: number | null
+          id_almacen: number | null
+          id_pieza: number | null
+          id_producto: number | null
+          id_sucursal: number | null
+          id_venta: number | null
+          precio_compra: number | null
+          precio_venta: number | null
+          total: number | null
+        }
+        Insert: {
+          cantidad?: number | null
+          descripcion?: string | null
+          estado?: string | null
+          id?: number | null
+          id_almacen?: number | null
+          id_pieza?: number | null
+          id_producto?: number | null
+          id_sucursal?: number | null
+          id_venta?: number | null
+          precio_compra?: never
+          precio_venta?: number | null
+          total?: number | null
+        }
+        Update: {
+          cantidad?: number | null
+          descripcion?: string | null
+          estado?: string | null
+          id?: number | null
+          id_almacen?: number | null
+          id_pieza?: number | null
+          id_producto?: number | null
+          id_sucursal?: number | null
+          id_venta?: number | null
+          precio_compra?: never
+          precio_venta?: number | null
+          total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detalle_venta_id_pieza_fkey"
+            columns: ["id_pieza"]
+            isOneToOne: false
+            referencedRelation: "piezas_inventario"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detalle_venta_id_pieza_fkey"
+            columns: ["id_pieza"]
+            isOneToOne: false
+            referencedRelation: "piezas_inventario_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detalle_venta_id_sucursal_fkey"
+            columns: ["id_sucursal"]
+            isOneToOne: false
+            referencedRelation: "sucursales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "public_detalle_venta_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "public_detalle_venta_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "public_detalle_venta_id_venta_fkey"
+            columns: ["id_venta"]
+            isOneToOne: false
+            referencedRelation: "ventas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      piezas_inventario_v: {
+        Row: {
+          barcode: string | null
+          costo: number | null
+          created_at: string | null
+          estado: string | null
+          id: number | null
+          id_almacen: number | null
+          id_detalle_venta: number | null
+          id_empresa: number | null
+          id_grupo: number | null
+          id_producto: number | null
+          id_variante: number | null
+          id_venta_reserva: number | null
+          medidas: string | null
+          nota: string | null
+          peso: number | null
+          precio_oferta: number | null
+          precio_venta: number | null
+          sku: string | null
+          talla: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          barcode?: string | null
+          costo?: never
+          created_at?: string | null
+          estado?: string | null
+          id?: number | null
+          id_almacen?: number | null
+          id_detalle_venta?: number | null
+          id_empresa?: number | null
+          id_grupo?: number | null
+          id_producto?: number | null
+          id_variante?: number | null
+          id_venta_reserva?: number | null
+          medidas?: string | null
+          nota?: string | null
+          peso?: number | null
+          precio_oferta?: number | null
+          precio_venta?: number | null
+          sku?: string | null
+          talla?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          barcode?: string | null
+          costo?: never
+          created_at?: string | null
+          estado?: string | null
+          id?: number | null
+          id_almacen?: number | null
+          id_detalle_venta?: number | null
+          id_empresa?: number | null
+          id_grupo?: number | null
+          id_producto?: number | null
+          id_variante?: number | null
+          id_venta_reserva?: number | null
+          medidas?: string | null
+          nota?: string | null
+          peso?: number | null
+          precio_oferta?: number | null
+          precio_venta?: number | null
+          sku?: string | null
+          talla?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "piezas_inventario_id_almacen_fkey"
+            columns: ["id_almacen"]
+            isOneToOne: false
+            referencedRelation: "almacen"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "piezas_inventario_id_detalle_venta_fkey"
+            columns: ["id_detalle_venta"]
+            isOneToOne: false
+            referencedRelation: "detalle_venta"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "piezas_inventario_id_detalle_venta_fkey"
+            columns: ["id_detalle_venta"]
+            isOneToOne: false
+            referencedRelation: "detalle_venta_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "piezas_inventario_id_empresa_fkey"
+            columns: ["id_empresa"]
+            isOneToOne: false
+            referencedRelation: "empresa"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "piezas_inventario_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "piezas_inventario_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "piezas_inventario_id_variante_fkey"
+            columns: ["id_variante"]
+            isOneToOne: false
+            referencedRelation: "producto_variantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "piezas_inventario_id_variante_fkey"
+            columns: ["id_variante"]
+            isOneToOne: false
+            referencedRelation: "producto_variantes_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "piezas_inventario_id_venta_reserva_fkey"
+            columns: ["id_venta_reserva"]
+            isOneToOne: false
+            referencedRelation: "ventas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      producto_variantes_v: {
+        Row: {
+          created_at: string | null
+          id: number | null
+          id_empresa: number | null
+          id_producto: number | null
+          material: string | null
+          notas: string | null
+          precio_compra_sugerido: number | null
+          precio_venta_sugerido: number | null
+          pureza: string | null
+          sku_prefijo: string | null
+          ultimo_correlativo: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number | null
+          id_empresa?: number | null
+          id_producto?: number | null
+          material?: string | null
+          notas?: string | null
+          precio_compra_sugerido?: never
+          precio_venta_sugerido?: number | null
+          pureza?: string | null
+          sku_prefijo?: string | null
+          ultimo_correlativo?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number | null
+          id_empresa?: number | null
+          id_producto?: number | null
+          material?: string | null
+          notas?: string | null
+          precio_compra_sugerido?: never
+          precio_venta_sugerido?: number | null
+          pureza?: string | null
+          sku_prefijo?: string | null
+          ultimo_correlativo?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "producto_variantes_id_empresa_fkey"
+            columns: ["id_empresa"]
+            isOneToOne: false
+            referencedRelation: "empresa"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "producto_variantes_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "producto_variantes_id_producto_fkey"
+            columns: ["id_producto"]
+            isOneToOne: false
+            referencedRelation: "productos_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      productos_v: {
+        Row: {
+          activo: boolean | null
+          codigo_barras: string | null
+          codigo_interno: string | null
+          created_at: string | null
+          descripcion: string | null
+          destacado: boolean | null
+          es_joyeria: boolean | null
+          id: number | null
+          id_categoria: number | null
+          id_empresa: number | null
+          id_marca: number | null
+          maneja_inventarios: boolean | null
+          maneja_multiprecios: boolean | null
+          medidas: string | null
+          nombre: string | null
+          oferta_desde: string | null
+          oferta_hasta: string | null
+          precio_compra: number | null
+          precio_oferta: number | null
+          precio_venta: number | null
+          sevende_por: string | null
+          tallas: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          activo?: boolean | null
+          codigo_barras?: string | null
+          codigo_interno?: string | null
+          created_at?: string | null
+          descripcion?: string | null
+          destacado?: boolean | null
+          es_joyeria?: boolean | null
+          id?: number | null
+          id_categoria?: number | null
+          id_empresa?: number | null
+          id_marca?: number | null
+          maneja_inventarios?: boolean | null
+          maneja_multiprecios?: boolean | null
+          medidas?: string | null
+          nombre?: string | null
+          oferta_desde?: string | null
+          oferta_hasta?: string | null
+          precio_compra?: never
+          precio_oferta?: number | null
+          precio_venta?: number | null
+          sevende_por?: string | null
+          tallas?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          activo?: boolean | null
+          codigo_barras?: string | null
+          codigo_interno?: string | null
+          created_at?: string | null
+          descripcion?: string | null
+          destacado?: boolean | null
+          es_joyeria?: boolean | null
+          id?: number | null
+          id_categoria?: number | null
+          id_empresa?: number | null
+          id_marca?: number | null
+          maneja_inventarios?: boolean | null
+          maneja_multiprecios?: boolean | null
+          medidas?: string | null
+          nombre?: string | null
+          oferta_desde?: string | null
+          oferta_hasta?: string | null
+          precio_compra?: never
+          precio_oferta?: number | null
+          precio_venta?: number | null
+          sevende_por?: string | null
+          tallas?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_productos_id_categoria_fkey"
+            columns: ["id_categoria"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "public_productos_id_empresa_fkey"
+            columns: ["id_empresa"]
+            isOneToOne: false
+            referencedRelation: "empresa"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
-      ajustar_pieza: {
-        Args: {
-          _costo: number
-          _id_empresa: number
-          _id_pieza: number
-          _id_usuario: number
-          _nota: string
-          _peso: number
-          _precio_venta: number
-        }
+      admin_actualizar_estado_envio: {
+        Args: { _estado_envio: string; _id_venta: number }
         Returns: undefined
       }
+      admin_detalle_pedido_ecommerce: {
+        Args: { _id_venta: number }
+        Returns: {
+          calle: string
+          colonia: string
+          cp: string
+          destinatario: string
+          email: string
+          entre_calles: string
+          estado: string
+          items: Json
+          municipio: string
+          numero_exterior: string
+          numero_interior: string
+          referencias: string
+          telefono: string
+        }[]
+      }
+      admin_es_gerente: { Args: never; Returns: boolean }
+      admin_es_personal: { Args: never; Returns: boolean }
+      admin_es_superadmin: { Args: never; Returns: boolean }
+      admin_exigir_gerente: { Args: never; Returns: undefined }
+      admin_exigir_modulo: { Args: { ids: number[] }; Returns: undefined }
+      admin_exigir_personal: { Args: never; Returns: undefined }
+      admin_listar_notificaciones_pedidos: {
+        Args: never
+        Returns: {
+          destinatario: string
+          fecha: string
+          id: number
+          monto_total: number
+          nro_comprobante: string
+        }[]
+      }
+      admin_listar_pedidos_ecommerce: {
+        Args: never
+        Returns: {
+          destinatario: string
+          email: string
+          estado_envio: string
+          fecha: string
+          id: number
+          metodo_pago: string
+          monto_total: number
+          nro_comprobante: string
+          telefono: string
+        }[]
+      }
+      admin_marcar_notificacion_leida: {
+        Args: { _id_venta: number }
+        Returns: undefined
+      }
+      admin_rol_actual: { Args: never; Returns: string }
+      admin_tiene_modulo: { Args: { ids: number[] }; Returns: boolean }
+      admin_ve_costos: { Args: never; Returns: boolean }
+      ajustar_pieza:
+        | {
+            Args: {
+              _costo: number
+              _id_empresa: number
+              _id_pieza: number
+              _id_usuario: number
+              _nota: string
+              _peso: number
+              _precio_venta: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              _costo: number
+              _id_empresa: number
+              _id_pieza: number
+              _id_usuario: number
+              _nota: string
+              _peso: number
+              _precio_oferta?: number
+              _precio_venta: number
+              _quitar_oferta?: boolean
+              _talla?: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              _costo: number
+              _id_empresa: number
+              _id_pieza: number
+              _id_usuario: number
+              _medidas?: string
+              _nota: string
+              _peso: number
+              _precio_oferta?: number
+              _precio_venta: number
+              _quitar_oferta?: boolean
+              _talla?: string
+            }
+            Returns: undefined
+          }
       buscarproductos: {
         Args: { _id_empresa: number; buscador: string }
         Returns: {
@@ -1654,6 +2831,7 @@ export type Database = {
         Returns: {
           cantidad_productos: number | null
           estado: string | null
+          estado_envio: string | null
           fecha: string
           id: number
           id_cierre_caja: number | null
@@ -1662,6 +2840,7 @@ export type Database = {
           id_orden_externa: string | null
           id_sucursal: number | null
           id_usuario: number | null
+          metodo_pago: string | null
           monto_total: number | null
           nro_comprobante: string | null
           origen: string
@@ -1701,13 +2880,17 @@ export type Database = {
           id_almacen: number | null
           id_detalle_venta: number | null
           id_empresa: number
+          id_grupo: number | null
           id_producto: number
           id_variante: number
           id_venta_reserva: number | null
+          medidas: string | null
           nota: string | null
           peso: number
+          precio_oferta: number | null
           precio_venta: number
           sku: string
+          talla: string | null
           updated_at: string
         }[]
         SetofOptions: {
@@ -1734,13 +2917,17 @@ export type Database = {
           id_almacen: number | null
           id_detalle_venta: number | null
           id_empresa: number
+          id_grupo: number | null
           id_producto: number
           id_variante: number
           id_venta_reserva: number | null
+          medidas: string | null
           nota: string | null
           peso: number
+          precio_oferta: number | null
           precio_venta: number
           sku: string
+          talla: string | null
           updated_at: string
         }[]
         SetofOptions: {
@@ -1750,16 +2937,28 @@ export type Database = {
           isSetofReturn: true
         }
       }
-      crear_producto_joyeria: {
-        Args: {
-          _descripcion: string
-          _id_categoria: number
-          _id_empresa: number
-          _id_marca: number
-          _nombre: string
-        }
-        Returns: number
-      }
+      crear_producto_joyeria:
+        | {
+            Args: {
+              _descripcion: string
+              _id_categoria: number
+              _id_empresa: number
+              _id_marca: number
+              _nombre: string
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              _descripcion: string
+              _destacado?: boolean
+              _id_categoria: number
+              _id_empresa: number
+              _id_marca: number
+              _nombre: string
+            }
+            Returns: number
+          }
       crear_variante: {
         Args: {
           _id_empresa: number
@@ -1782,6 +2981,7 @@ export type Database = {
         Returns: {
           cantidad_productos: number | null
           estado: string | null
+          estado_envio: string | null
           fecha: string
           id: number
           id_cierre_caja: number | null
@@ -1790,6 +2990,45 @@ export type Database = {
           id_orden_externa: string | null
           id_sucursal: number | null
           id_usuario: number | null
+          metodo_pago: string | null
+          monto_total: number | null
+          nro_comprobante: string | null
+          origen: string
+          pago_con: number | null
+          referencia_tarjeta: string | null
+          saldo: number | null
+          sub_total: number | null
+          total_impuestos: number | null
+          valor_impuesto: number | null
+          vuelto: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "ventas"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      crear_venta_externa_piezas: {
+        Args: {
+          _canal: string
+          _id_orden_externa: string
+          _id_tipo_comprobante: number
+          _serie: string
+        }
+        Returns: {
+          cantidad_productos: number | null
+          estado: string | null
+          estado_envio: string | null
+          fecha: string
+          id: number
+          id_cierre_caja: number | null
+          id_cliente: number | null
+          id_empresa: number | null
+          id_orden_externa: string | null
+          id_sucursal: number | null
+          id_usuario: number | null
+          metodo_pago: string | null
           monto_total: number | null
           nro_comprobante: string | null
           origen: string
@@ -1880,6 +3119,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      ecommerce_actualizar_mi_telefono: {
+        Args: { _telefono: string }
+        Returns: undefined
+      }
       ecommerce_buscar_cp: {
         Args: { _cp: string }
         Returns: {
@@ -1890,6 +3133,7 @@ export type Database = {
           tipo_asentamiento: string
         }[]
       }
+      ecommerce_costo_envio: { Args: never; Returns: number }
       ecommerce_id_empresa: { Args: never; Returns: number }
       ecommerce_imagenes_producto: {
         Args: { _id_producto: number }
@@ -1907,13 +3151,17 @@ export type Database = {
           url: string
         }[]
       }
+      ecommerce_liberar_reservas_vencidas: {
+        Args: { _minutos?: number }
+        Returns: number
+      }
       ecommerce_listar_banners: {
         Args: never
         Returns: {
           id: number
           imagen_url: string
-          link_destino: string | null
-          subtitulo: string | null
+          link_destino: string
+          subtitulo: string
           titulo: string
         }[]
       }
@@ -1933,15 +3181,51 @@ export type Database = {
           nombre: string
         }[]
       }
+      ecommerce_listar_favoritos: {
+        Args: never
+        Returns: {
+          categoria: string
+          descripcion: string
+          destacado: boolean
+          es_joyeria: boolean
+          etiquetas: string[]
+          id: number
+          id_categoria: number
+          imagen_portada: string
+          marca: string
+          nombre: string
+          precio_oferta: number
+          precio_venta: number
+          total_disponible: number
+        }[]
+      }
+      ecommerce_listar_marcas: {
+        Args: never
+        Returns: {
+          id: number
+          nombre: string
+        }[]
+      }
+      ecommerce_listar_materiales: {
+        Args: never
+        Returns: {
+          material: string
+        }[]
+      }
       ecommerce_listar_productos: {
         Args: {
           _buscador?: string
           _id_categoria?: number
           _id_etiqueta?: number
+          _id_marca?: number
           _material?: string
           _pagina?: number
+          _peso_max?: number
+          _peso_min?: number
           _precio_max?: number
           _precio_min?: number
+          _solo_disponibles?: boolean
+          _talla?: string
           _tam_pagina?: number
         }
         Returns: {
@@ -1953,12 +3237,20 @@ export type Database = {
           id: number
           id_categoria: number
           imagen_portada: string
-          marca: string | null
+          marca: string
           nombre: string
-          precio_oferta: number | null
+          precio_oferta: number
           precio_venta: number
           total_count: number
           total_disponible: number
+        }[]
+      }
+      ecommerce_mi_perfil: {
+        Args: never
+        Returns: {
+          email: string
+          nombre: string
+          telefono: string
         }[]
       }
       ecommerce_mis_pedidos: {
@@ -1966,6 +3258,7 @@ export type Database = {
         Returns: {
           cantidad_productos: number
           estado: string
+          estado_envio: string
           fecha: string
           id_orden_externa: string
           monto_total: number
@@ -1977,12 +3270,12 @@ export type Database = {
         Returns: {
           id_grupo: number
           id_pieza: number
-          medidas: string | null
+          medidas: string
           peso: number
-          precio_oferta: number | null
+          precio_oferta: number
           precio_venta: number
           sku: string
-          talla: string | null
+          talla: string
         }[]
       }
       ecommerce_producto_detalle: {
@@ -1995,14 +3288,14 @@ export type Database = {
           etiquetas: string[]
           id: number
           id_categoria: number
-          imagen_portada: string | null
-          marca: string | null
-          medidas: string | null
+          imagen_portada: string
+          marca: string
+          medidas: string
           nombre: string
-          precio_oferta: number | null
+          precio_oferta: number
           precio_venta: number
-          tallas: string | null
-          total_disponible: number | null
+          tallas: string
+          total_disponible: number
         }[]
       }
       ecommerce_variantes_disponibles: {
@@ -2019,12 +3312,16 @@ export type Database = {
       }
       ecommerce_vincular_cliente: {
         Args: {
-          _user_id: string
           _email?: string
           _nombre?: string
           _telefono?: string
+          _user_id: string
         }
         Returns: number
+      }
+      editar_marca: {
+        Args: { _id: number; _nombre: string }
+        Returns: undefined
       }
       editarcantidaddv: {
         Args: { _cantidad: number; _id: number }
@@ -2057,20 +3354,71 @@ export type Database = {
         Args: { _id: number; _id_empresa: number; _nombre: string }
         Returns: undefined
       }
-      editarproductos: {
-        Args: {
-          _codigo_barras: string
-          _codigo_interno: string
-          _id: number
-          _id_categoria: number
-          _id_empresa: number
-          _maneja_inventarios: boolean
-          _nombre: string
-          _precio_compra: number
-          _precio_venta: number
-          _sevende_por: string
-        }
-        Returns: undefined
+      editarproductos:
+        | {
+            Args: {
+              _codigo_barras: string
+              _codigo_interno: string
+              _id: number
+              _id_categoria: number
+              _id_empresa: number
+              _maneja_inventarios: boolean
+              _nombre: string
+              _precio_compra: number
+              _precio_venta: number
+              _sevende_por: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              _codigo_barras: string
+              _codigo_interno: string
+              _destacado?: boolean
+              _id: number
+              _id_categoria: number
+              _id_empresa: number
+              _maneja_inventarios: boolean
+              _nombre: string
+              _oferta_desde?: string
+              _oferta_hasta?: string
+              _precio_compra: number
+              _precio_oferta?: number
+              _precio_venta: number
+              _sevende_por: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              _codigo_barras: string
+              _codigo_interno: string
+              _destacado?: boolean
+              _id: number
+              _id_categoria: number
+              _id_empresa: number
+              _id_marca?: number
+              _maneja_inventarios: boolean
+              _medidas?: string
+              _nombre: string
+              _oferta_desde?: string
+              _oferta_hasta?: string
+              _precio_compra: number
+              _precio_oferta?: number
+              _precio_venta: number
+              _sevende_por: string
+              _tallas?: string
+            }
+            Returns: undefined
+          }
+      eliminar_etiqueta: { Args: { _id: number }; Returns: undefined }
+      eliminar_marca: { Args: { _id: number }; Returns: undefined }
+      etiquetas_de_producto: {
+        Args: { _id_producto: number }
+        Returns: {
+          id: number
+          nombre: string
+        }[]
       }
       generar_nro_comprobante: {
         Args: {
@@ -2083,6 +3431,14 @@ export type Database = {
       incrementarstock: {
         Args: { _id: number; cantidad: number }
         Returns: undefined
+      }
+      insertar_etiqueta: {
+        Args: { _id_empresa: number; _nombre: string }
+        Returns: number
+      }
+      insertar_marca: {
+        Args: { _id_empresa: number; _nombre: string }
+        Returns: number
       }
       insertar_productos: { Args: never; Returns: undefined }
       insertarcategorias: {
@@ -2124,24 +3480,77 @@ export type Database = {
         Args: { _id_empresa: number; _nombre: string }
         Returns: undefined
       }
-      insertarproductos: {
-        Args: {
-          _codigo_barras: string
-          _codigo_interno: string
-          _id_categoria: number
-          _id_empresa: number
-          _maneja_inventarios: boolean
-          _maneja_multiprecios: boolean
-          _nombre: string
-          _precio_compra: number
-          _precio_venta: number
-          _sevende_por: string
-        }
-        Returns: number
-      }
+      insertarproductos:
+        | {
+            Args: {
+              _codigo_barras: string
+              _codigo_interno: string
+              _id_categoria: number
+              _id_empresa: number
+              _maneja_inventarios: boolean
+              _maneja_multiprecios: boolean
+              _nombre: string
+              _precio_compra: number
+              _precio_venta: number
+              _sevende_por: string
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              _codigo_barras: string
+              _codigo_interno: string
+              _destacado?: boolean
+              _id_categoria: number
+              _id_empresa: number
+              _maneja_inventarios: boolean
+              _maneja_multiprecios: boolean
+              _nombre: string
+              _oferta_desde?: string
+              _oferta_hasta?: string
+              _precio_compra: number
+              _precio_oferta?: number
+              _precio_venta: number
+              _sevende_por: string
+            }
+            Returns: number
+          }
+        | {
+            Args: {
+              _codigo_barras: string
+              _codigo_interno: string
+              _destacado?: boolean
+              _id_categoria: number
+              _id_empresa: number
+              _id_marca?: number
+              _maneja_inventarios: boolean
+              _maneja_multiprecios: boolean
+              _medidas?: string
+              _nombre: string
+              _oferta_desde?: string
+              _oferta_hasta?: string
+              _precio_compra: number
+              _precio_oferta?: number
+              _precio_venta: number
+              _sevende_por: string
+              _tallas?: string
+            }
+            Returns: number
+          }
       joyeria_ean13: {
         Args: { _id_empresa: number; _seq: number }
         Returns: string
+      }
+      joyeria_grupo_pieza: {
+        Args: {
+          _excluir_id?: number
+          _id_empresa: number
+          _id_variante: number
+          _medidas: string
+          _peso: number
+          _talla: string
+        }
+        Returns: number
       }
       joyeria_inventario_listado: {
         Args: { _id_empresa: number }
@@ -2159,12 +3568,15 @@ export type Database = {
           id_producto: number
           id_variante: number
           material: string
+          medidas: string
           peso: number
+          precio_oferta: number
           precio_venta: number
           producto: string
           pureza: string
           sku: string
           sku_prefijo: string
+          talla: string
         }[]
       }
       joyeria_movimientos_pieza: {
@@ -2194,6 +3606,19 @@ export type Database = {
         Args: { _id_empresa: number; _id_pieza: number; _id_usuario: number }
         Returns: undefined
       }
+      licencia_estado: { Args: never; Returns: Json }
+      licencia_exigir: { Args: { _funcion: string }; Returns: undefined }
+      licencia_plan: { Args: never; Returns: string }
+      licencia_suspendida: { Args: never; Returns: boolean }
+      licencia_tiene: { Args: { _funcion: string }; Returns: boolean }
+      licencia_url_funcion: { Args: { _nombre: string }; Returns: string }
+      listar_etiquetas: {
+        Args: { _id_empresa: number }
+        Returns: {
+          id: number
+          nombre: string
+        }[]
+      }
       marcar_pieza: {
         Args: {
           _estado: string
@@ -2203,6 +3628,126 @@ export type Database = {
           _nota: string
         }
         Returns: undefined
+      }
+      ml_admin_cuenta: {
+        Args: never
+        Returns: {
+          expira_en: string
+          ml_user_id: number
+        }[]
+      }
+      ml_admin_disenos_sin_configurar: {
+        Args: never
+        Returns: {
+          id_producto: number
+          nombre: string
+          piezas_disponibles: number
+        }[]
+      }
+      ml_admin_exigir_personal: { Args: never; Returns: undefined }
+      ml_admin_guardar_diseno: {
+        Args: {
+          _atributos: Json
+          _id_producto: number
+          _ml_category_id: string
+          _publicar: boolean
+        }
+        Returns: undefined
+      }
+      ml_admin_listar_disenos: {
+        Args: never
+        Returns: {
+          atributos: Json
+          grupos_sospechosos: number
+          id_producto: number
+          ml_category_id: string
+          nombre: string
+          piezas_disponibles: number
+          publicaciones_activas: number
+          publicaciones_con_error: number
+          publicar: boolean
+          updated_at: string
+        }[]
+      }
+      ml_admin_listar_ordenes: {
+        Args: never
+        Returns: {
+          comprador: string
+          created_at: string
+          estado_ml: string
+          estado_venta: string
+          id_venta: number
+          ml_order_id: number
+          nro_comprobante: string
+          pack_id: number
+          total: number
+          ultimo_error: string
+          updated_at: string
+        }[]
+      }
+      ml_admin_listar_publicaciones: {
+        Args: never
+        Returns: {
+          cantidad_publicada: number
+          estado_ml: string
+          id: number
+          id_producto: number
+          ml_item_id: string
+          modelo: string
+          nombre: string
+          precio_publicado: number
+          sincronizado_en: string
+          ultimo_error: string
+        }[]
+      }
+      ml_admin_previsualizar: {
+        Args: { _id_producto: number }
+        Returns: {
+          fotos: string[]
+          id_variante: number
+          peso: number
+          piezas: number
+          precio: number
+          precio_minimo: number
+          sospechoso: boolean
+          talla: string
+          titulo: string
+          variante: string
+        }[]
+      }
+      ml_admin_sincronizar: { Args: never; Returns: undefined }
+      ml_anular_orden: {
+        Args: { _id_empresa: number; _ml_order_id: number }
+        Returns: string
+      }
+      ml_confirmar_orden: {
+        Args: {
+          _id_empresa: number
+          _id_sucursal: number
+          _id_tipo_comprobante: number
+          _lineas: Json
+          _metodo_pago: string
+          _ml_order_id: number
+          _monto_total: number
+          _serie: string
+        }
+        Returns: number
+      }
+      ml_pedir_sincronizacion: { Args: { _body: Json }; Returns: undefined }
+      ml_precios_minimos: {
+        Args: { _id_producto: number }
+        Returns: {
+          id_variante: number
+          precio_minimo: number
+        }[]
+      }
+      ml_reclamar_grupo: {
+        Args: {
+          _clave_grupo: string
+          _id_producto: number
+          _modelo_base: string
+        }
+        Returns: string
       }
       mostrarcajasabiertasporempresa: {
         Args: { _id_empresa: number }
@@ -2293,21 +3838,21 @@ export type Database = {
           id: number
           id_categoria: number
           id_empresa: number
-          id_marca: number | null
+          id_marca: number
           imagen_portada: string
           maneja_inventarios: boolean
           maneja_multiprecios: boolean
-          medidas: string | null
+          medidas: string
           nombre: string
-          oferta_desde: string | null
-          oferta_hasta: string | null
+          oferta_desde: string
+          oferta_hasta: string
           p_compra: string
           p_venta: string
           precio_compra: number
-          precio_oferta: number | null
+          precio_oferta: number
           precio_venta: number
           sevende_por: string
-          tallas: string | null
+          tallas: string
         }[]
       }
       mostrarsucursalesasignadas: {
@@ -2359,6 +3904,7 @@ export type Database = {
         Returns: {
           cantidad_productos: number | null
           estado: string | null
+          estado_envio: string | null
           fecha: string
           id: number
           id_cierre_caja: number | null
@@ -2367,6 +3913,7 @@ export type Database = {
           id_orden_externa: string | null
           id_sucursal: number | null
           id_usuario: number | null
+          metodo_pago: string | null
           monto_total: number | null
           nro_comprobante: string | null
           origen: string
@@ -2488,6 +4035,10 @@ export type Database = {
           _id_usuario: number
           _id_venta: number
         }
+        Returns: undefined
+      }
+      set_etiquetas_producto: {
+        Args: { _id_producto: number; _ids_etiquetas: number[] }
         Returns: undefined
       }
       setdefaultserializacion: {

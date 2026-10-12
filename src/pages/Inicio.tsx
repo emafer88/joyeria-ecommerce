@@ -21,6 +21,11 @@ const FILTROS_VITRINA: FiltrosCatalogo = {
   precioMin: null,
   precioMax: null,
   buscador: null,
+  idMarca: null,
+  pesoMin: null,
+  pesoMax: null,
+  talla: null,
+  soloDisponibles: false,
   pagina: 1,
   tamPagina: 40,
 };
