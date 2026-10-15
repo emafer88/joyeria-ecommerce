@@ -1,0 +1,14 @@
+// Publicación de la tienda en Cloudflare Workers (sitio estático, sin código de servidor).
+// Cloudflare corre `npm run build` y luego `npx wrangler deploy`, que sube dist/.
+// Las variables VITE_* se cargan en Cloudflare (Settings → Build → Variables),
+// porque el .env no está en el repo.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tienda",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    // SPA: cualquier ruta desconocida (p. ej. /producto/12) devuelve index.html
+    "not_found_handling": "single-page-application"
+  }
+}
