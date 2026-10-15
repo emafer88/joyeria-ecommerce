@@ -147,7 +147,7 @@ export function ProductoDetalle() {
       </Link>
 
       <div className="layout">
-        <div className="galeria">
+        <div className={`galeria${galeria && galeria.length > 1 ? " varias" : ""}`}>
           {galeria && galeria.length > 0 ? (
             galeria.map((img) => (
               <img key={img.id} src={img.url} alt={producto.nombre} />
@@ -523,9 +523,28 @@ const Container = styled.div`
     gap: 10px;
     img {
       width: 100%;
+      aspect-ratio: 1 / 1;
       border-radius: ${v.borderRadius};
       object-fit: cover;
       border: 1px solid ${v.borderSutil};
+    }
+    /* Celular: las fotos se deslizan de lado en vez de apilarse, para que
+       el precio y el botón de comprar queden cerca. */
+    @media (max-width: 767.98px) {
+      flex-direction: row;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      img {
+        flex: 0 0 100%;
+        /* sin esto el width: 100% hace de ancho mínimo y gana al 88% */
+        min-width: 0;
+        scroll-snap-align: center;
+      }
+      /* Con varias fotos se asoma la siguiente: indica que se puede deslizar */
+      &.varias img {
+        flex-basis: 88%;
+      }
     }
     .sin-imagen {
       aspect-ratio: 1 / 1;

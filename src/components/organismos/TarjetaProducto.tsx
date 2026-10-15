@@ -90,8 +90,13 @@ const Container = styled(Link)`
   .imagen {
     position: relative;
     aspect-ratio: 1 / 1;
+    overflow: hidden;
     background: rgba(255, 255, 255, 0.03);
+    /* Absoluta: así una foto alta no estira la caja cuadrada (con la imagen
+       en el flujo, aspect-ratio cede ante su altura al terminar de cargar). */
     img {
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
