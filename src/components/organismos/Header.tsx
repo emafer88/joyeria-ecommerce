@@ -315,9 +315,56 @@ const Container = styled.header`
     color: ${v.colorPrincipal};
     font-weight: 600;
     font-size: 13.5px;
+    white-space: nowrap;
     transition: 0.2s;
     &:hover {
       background: rgba(243, 210, 12, 0.18);
+    }
+  }
+
+  /* Celular: dos renglones (marca + cuenta/carrito; enlaces + buscador).
+     Es sticky, así que cada renglón de más le quita pantalla al contenido. */
+  @media (max-width: 859.98px) {
+    flex-wrap: wrap;
+    gap: 0 12px;
+    padding: 10px 16px;
+
+    /* Salto de renglón forzado entre marca/cuenta (order 0) y
+       enlaces/buscador (order 3 y 4); su alto hace de separación. */
+    &::before {
+      content: "";
+      order: 2;
+      flex-basis: 100%;
+      height: 10px;
+    }
+
+    .marca {
+      min-width: 0;
+      gap: 8px;
+    }
+    .nombre {
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .enlaces {
+      width: auto;
+      gap: 14px;
+    }
+    .buscador {
+      flex: 1 1 0;
+      max-width: none;
+      min-width: 0;
+    }
+    nav {
+      gap: 10px;
+    }
+    .disparador {
+      max-width: 110px;
+    }
+    .carrito {
+      padding: 6px 12px;
     }
   }
 `;
