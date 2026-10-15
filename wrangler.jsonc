@@ -4,7 +4,7 @@
 // porque el .env no está en el repo.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tienda",
+  "name": "cubiks-ecommerce",
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "./dist",
