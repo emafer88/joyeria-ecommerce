@@ -12,9 +12,11 @@
 --
 -- Cualquier usuario del POS la puede pedir, pero se necesita la clave numérica
 -- de alguien que pueda autorizar: el gerente (superadmin/admin) o quien tenga
--- el permiso "Autorizar cancelaciones". Cada uno define su clave en Mi perfil;
--- se guarda con bcrypt en usuarios_clave, que la app no puede leer. Cinco
--- claves incorrectas seguidas bloquean al que lo intenta 15 minutos.
+-- el permiso "Autorizar cancelaciones". Cada uno define su clave en Mi perfil,
+-- donde la puede ver (oculta por defecto) y cambiar. Se guarda cifrada
+-- (pgp_sym_encrypt) en usuarios_clave, que la app no puede leer, con una llave
+-- aleatoria guardada en Supabase Vault; solo estas funciones la descifran.
+-- Cinco claves incorrectas seguidas bloquean al que lo intenta 15 minutos.
 --
 -- Los totales del dashboard/reportes que no miraban el estado ahora ignoran
 -- las ventas anuladas, y el cierre de caja resta las salidas por cancelación.
@@ -45,11 +47,34 @@ ALTER TABLE public.ventas
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.usuarios_clave (
   id_usuario bigint      PRIMARY KEY REFERENCES public.usuarios(id) ON DELETE CASCADE,
-  clave_hash text        NOT NULL,
+  clave_cifrada bytea   NOT NULL,
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 ALTER TABLE public.usuarios_clave ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.usuarios_clave FROM PUBLIC, anon, authenticated;
+
+-- Llave de cifrado: aleatoria, en el Vault, una por base.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM vault.secrets WHERE name = 'clave_autorizacion_llave') THEN
+    PERFORM vault.create_secret(encode(extensions.gen_random_bytes(32), 'hex'),
+                                'clave_autorizacion_llave',
+                                'Cifra las claves de autorización de cancelaciones');
+  END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.admin_llave_clave()
+RETURNS text
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  SELECT decrypted_secret FROM vault.decrypted_secrets
+   WHERE name = 'clave_autorizacion_llave';
+$$;
+REVOKE ALL ON FUNCTION public.admin_llave_clave() FROM PUBLIC, anon, authenticated;
 
 -- Intentos fallidos de clave de quien pide la cancelación.
 CREATE TABLE IF NOT EXISTS public.clave_intentos (
@@ -88,21 +113,24 @@ AS $$
 $$;
 REVOKE ALL ON FUNCTION public.admin_puede_autorizar(bigint) FROM PUBLIC, anon;
 
-CREATE OR REPLACE FUNCTION public.tengo_clave_autorizacion()
-RETURNS boolean
+-- La clave del usuario actual (NULL si no tiene), para mostrarla en su
+-- perfil. Solo la propia y solo si autoriza cancelaciones.
+CREATE OR REPLACE FUNCTION public.mi_clave_autorizacion()
+RETURNS text
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public, pg_temp
+SET search_path = public, extensions, pg_temp
 AS $$
-  SELECT EXISTS (SELECT 1 FROM usuarios_clave WHERE id_usuario = admin_usuario_actual());
+  SELECT pgp_sym_decrypt(clave_cifrada, admin_llave_clave())
+    FROM usuarios_clave
+   WHERE id_usuario = admin_usuario_actual()
+     AND admin_puede_autorizar(id_usuario);
 $$;
-REVOKE ALL ON FUNCTION public.tengo_clave_autorizacion() FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.tengo_clave_autorizacion() TO authenticated;
+REVOKE ALL ON FUNCTION public.mi_clave_autorizacion() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.mi_clave_autorizacion() TO authenticated;
 
--- Para cambiarla hay que dar la actual: una sesión abierta en la caja no
--- alcanza para cambiar la clave de su dueño.
-CREATE OR REPLACE FUNCTION public.guardar_clave_autorizacion(_clave_nueva text, _clave_actual text DEFAULT NULL)
+CREATE OR REPLACE FUNCTION public.guardar_clave_autorizacion(_clave text)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -110,26 +138,21 @@ SET search_path = public, extensions, pg_temp
 AS $$
 DECLARE
   v_usuario bigint := admin_usuario_actual();
-  v_hash    text;
 BEGIN
   IF v_usuario IS NULL OR NOT admin_puede_autorizar(v_usuario) THEN
     RAISE EXCEPTION 'Tu usuario no autoriza cancelaciones' USING ERRCODE = '42501';
   END IF;
-  IF coalesce(_clave_nueva, '') !~ '^[0-9]{4,8}$' THEN
+  IF coalesce(_clave, '') !~ '^[0-9]{4,8}$' THEN
     RAISE EXCEPTION 'La clave debe tener de 4 a 8 números';
   END IF;
-  SELECT clave_hash INTO v_hash FROM usuarios_clave WHERE id_usuario = v_usuario;
-  IF v_hash IS NOT NULL AND v_hash IS DISTINCT FROM crypt(coalesce(_clave_actual, ''), v_hash) THEN
-    RAISE EXCEPTION 'La clave actual no es correcta';
-  END IF;
-  INSERT INTO usuarios_clave (id_usuario, clave_hash, updated_at)
-  VALUES (v_usuario, crypt(_clave_nueva, gen_salt('bf')), now())
+  INSERT INTO usuarios_clave (id_usuario, clave_cifrada, updated_at)
+  VALUES (v_usuario, pgp_sym_encrypt(_clave, admin_llave_clave()), now())
   ON CONFLICT (id_usuario) DO UPDATE
-     SET clave_hash = EXCLUDED.clave_hash, updated_at = now();
+     SET clave_cifrada = EXCLUDED.clave_cifrada, updated_at = now();
 END;
 $$;
-REVOKE ALL ON FUNCTION public.guardar_clave_autorizacion(text, text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.guardar_clave_autorizacion(text, text) TO authenticated;
+REVOKE ALL ON FUNCTION public.guardar_clave_autorizacion(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.guardar_clave_autorizacion(text) TO authenticated;
 
 -- ----------------------------------------------------------------------------
 -- Cancelar. Devuelve 'ok', 'clave_incorrecta' o 'bloqueado' (sin excepción,
@@ -179,7 +202,7 @@ BEGIN
   END IF;
   SELECT c.id_usuario INTO v_autoriza
     FROM usuarios_clave c
-   WHERE c.clave_hash = crypt(coalesce(_clave, ''), c.clave_hash)
+   WHERE pgp_sym_decrypt(c.clave_cifrada, admin_llave_clave()) = coalesce(_clave, '')
      AND admin_puede_autorizar(c.id_usuario)
    LIMIT 1;
   IF v_autoriza IS NULL THEN
