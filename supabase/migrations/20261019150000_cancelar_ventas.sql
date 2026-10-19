@@ -2,57 +2,160 @@
 -- Ventas del turno en el POS: ver, reimprimir y cancelar.
 --
 -- Cancelar (anular_venta) no borra la venta: queda con estado 'anulada', quién
--- y por qué, y se revierte todo lo que hizo al cobrarse:
+-- la canceló, quién la autorizó y por qué, y se revierte lo que hizo al
+-- cobrarse:
 --   * stock de productos que lo controlan (+ movimiento en el kardex);
 --   * piezas de joyería vendidas vuelven a 'disponible' (+ movimiento);
 --   * el dinero sale de la caja: una 'salida' por cada método con que se
 --     pagó, en el mismo turno.
 -- Solo ventas del POS, confirmadas y de un turno de caja todavía abierto.
--- Solo quien tiene el permiso "Cancelar ventas" (el gerente siempre).
+--
+-- Cualquier usuario del POS la puede pedir, pero se necesita la clave numérica
+-- de alguien que pueda autorizar: el gerente (superadmin/admin) o quien tenga
+-- el permiso "Autorizar cancelaciones". Cada uno define su clave en Mi perfil;
+-- se guarda con bcrypt en usuarios_clave, que la app no puede leer. Cinco
+-- claves incorrectas seguidas bloquean al que lo intenta 15 minutos.
 --
 -- Los totales del dashboard/reportes que no miraban el estado ahora ignoran
 -- las ventas anuladas, y el cierre de caja resta las salidas por cancelación.
 -- ============================================================================
 
 INSERT INTO public.modulos (nombre, descripcion, icono, link, etiquetas)
-SELECT 'Cancelar ventas', 'cancelar ventas cobradas en el POS',
-       '/iconos/factura-2.png', '#cancelar-ventas', '#permiso'
-WHERE NOT EXISTS (SELECT 1 FROM public.modulos WHERE nombre = 'Cancelar ventas');
+SELECT 'Autorizar cancelaciones', 'autorizar con su clave la cancelación de ventas',
+       '/iconos/factura-2.png', '#autorizar-cancelaciones', '#permiso'
+WHERE NOT EXISTS (SELECT 1 FROM public.modulos WHERE nombre = 'Autorizar cancelaciones');
 
 INSERT INTO public.permisos (id_usuario, idmodulo)
 SELECT u.id, m.id
   FROM public.usuarios u
   JOIN public.roles r ON r.id = u.id_rol AND r.nombre IN ('superadmin', 'admin')
  CROSS JOIN public.modulos m
- WHERE m.nombre = 'Cancelar ventas'
+ WHERE m.nombre = 'Autorizar cancelaciones'
    AND NOT EXISTS (SELECT 1 FROM public.permisos p
                     WHERE p.id_usuario = u.id AND p.idmodulo = m.id);
 
 ALTER TABLE public.ventas
   ADD COLUMN IF NOT EXISTS anulada_en       timestamptz,
   ADD COLUMN IF NOT EXISTS anulada_por      bigint REFERENCES public.usuarios(id),
+  ADD COLUMN IF NOT EXISTS autorizada_por   bigint REFERENCES public.usuarios(id),
   ADD COLUMN IF NOT EXISTS motivo_anulacion text;
 
-CREATE OR REPLACE FUNCTION public.anular_venta(_id_venta integer, _motivo text)
-RETURNS void
-LANGUAGE plpgsql
+-- ----------------------------------------------------------------------------
+-- Clave de autorización
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.usuarios_clave (
+  id_usuario bigint      PRIMARY KEY REFERENCES public.usuarios(id) ON DELETE CASCADE,
+  clave_hash text        NOT NULL,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.usuarios_clave ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.usuarios_clave FROM PUBLIC, anon, authenticated;
+
+-- Intentos fallidos de clave de quien pide la cancelación.
+CREATE TABLE IF NOT EXISTS public.clave_intentos (
+  id_usuario      bigint      PRIMARY KEY REFERENCES public.usuarios(id) ON DELETE CASCADE,
+  fallos          integer     NOT NULL DEFAULT 0,
+  bloqueado_hasta timestamptz
+);
+ALTER TABLE public.clave_intentos ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.clave_intentos FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.admin_usuario_actual()
+RETURNS bigint
+LANGUAGE sql
+STABLE
 SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
+  SELECT id FROM usuarios WHERE id_auth = auth.uid()::text AND estado = 'ACTIVO';
+$$;
+REVOKE ALL ON FUNCTION public.admin_usuario_actual() FROM PUBLIC, anon;
+
+CREATE OR REPLACE FUNCTION public.admin_puede_autorizar(_id_usuario bigint)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM usuarios u
+     WHERE u.id = _id_usuario AND u.estado = 'ACTIVO'
+       AND (EXISTS (SELECT 1 FROM roles r
+                     WHERE r.id = u.id_rol AND r.nombre IN ('superadmin', 'admin'))
+            OR EXISTS (SELECT 1 FROM permisos p JOIN modulos m ON m.id = p.idmodulo
+                        WHERE p.id_usuario = u.id AND m.nombre = 'Autorizar cancelaciones')));
+$$;
+REVOKE ALL ON FUNCTION public.admin_puede_autorizar(bigint) FROM PUBLIC, anon;
+
+CREATE OR REPLACE FUNCTION public.tengo_clave_autorizacion()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  SELECT EXISTS (SELECT 1 FROM usuarios_clave WHERE id_usuario = admin_usuario_actual());
+$$;
+REVOKE ALL ON FUNCTION public.tengo_clave_autorizacion() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.tengo_clave_autorizacion() TO authenticated;
+
+-- Para cambiarla hay que dar la actual: una sesión abierta en la caja no
+-- alcanza para cambiar la clave de su dueño.
+CREATE OR REPLACE FUNCTION public.guardar_clave_autorizacion(_clave_nueva text, _clave_actual text DEFAULT NULL)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions, pg_temp
+AS $$
 DECLARE
-  v          ventas%ROWTYPE;
-  v_usuario  bigint;
+  v_usuario bigint := admin_usuario_actual();
+  v_hash    text;
 BEGIN
-  IF NOT (admin_es_gerente() OR admin_tiene_modulo(
-            ARRAY(SELECT id::integer FROM modulos WHERE nombre = 'Cancelar ventas'))) THEN
+  IF v_usuario IS NULL OR NOT admin_puede_autorizar(v_usuario) THEN
+    RAISE EXCEPTION 'Tu usuario no autoriza cancelaciones' USING ERRCODE = '42501';
+  END IF;
+  IF coalesce(_clave_nueva, '') !~ '^[0-9]{4,8}$' THEN
+    RAISE EXCEPTION 'La clave debe tener de 4 a 8 números';
+  END IF;
+  SELECT clave_hash INTO v_hash FROM usuarios_clave WHERE id_usuario = v_usuario;
+  IF v_hash IS NOT NULL AND v_hash IS DISTINCT FROM crypt(coalesce(_clave_actual, ''), v_hash) THEN
+    RAISE EXCEPTION 'La clave actual no es correcta';
+  END IF;
+  INSERT INTO usuarios_clave (id_usuario, clave_hash, updated_at)
+  VALUES (v_usuario, crypt(_clave_nueva, gen_salt('bf')), now())
+  ON CONFLICT (id_usuario) DO UPDATE
+     SET clave_hash = EXCLUDED.clave_hash, updated_at = now();
+END;
+$$;
+REVOKE ALL ON FUNCTION public.guardar_clave_autorizacion(text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.guardar_clave_autorizacion(text, text) TO authenticated;
+
+-- ----------------------------------------------------------------------------
+-- Cancelar. Devuelve 'ok', 'clave_incorrecta' o 'bloqueado' (sin excepción,
+-- para que el intento fallido quede contado).
+-- ----------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS public.anular_venta(integer, text);
+
+CREATE OR REPLACE FUNCTION public.anular_venta(_id_venta integer, _motivo text, _clave text)
+RETURNS text
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions, pg_temp
+AS $$
+DECLARE
+  v           ventas%ROWTYPE;
+  v_usuario   bigint := admin_usuario_actual();
+  v_autoriza  bigint;
+  v_intentos  clave_intentos%ROWTYPE;
+  v_nota      text;
+BEGIN
+  IF v_usuario IS NULL OR NOT admin_es_personal() THEN
     RAISE EXCEPTION 'No tienes permiso para cancelar ventas' USING ERRCODE = '42501';
   END IF;
   IF coalesce(trim(_motivo), '') = '' THEN
     RAISE EXCEPTION 'Escribe el motivo de la cancelación';
   END IF;
-
-  SELECT id INTO v_usuario FROM usuarios
-   WHERE id_auth = auth.uid()::text AND estado = 'ACTIVO';
 
   SELECT * INTO v FROM ventas WHERE id = _id_venta FOR UPDATE;
   IF NOT FOUND THEN
@@ -68,6 +171,30 @@ BEGIN
                   WHERE cc.id = v.id_cierre_caja AND cc.estado = 0) THEN
     RAISE EXCEPTION 'Solo se pueden cancelar ventas del turno de caja abierto';
   END IF;
+
+  -- Clave de quien autoriza.
+  SELECT * INTO v_intentos FROM clave_intentos WHERE id_usuario = v_usuario FOR UPDATE;
+  IF v_intentos.bloqueado_hasta > now() THEN
+    RETURN 'bloqueado';
+  END IF;
+  SELECT c.id_usuario INTO v_autoriza
+    FROM usuarios_clave c
+   WHERE c.clave_hash = crypt(coalesce(_clave, ''), c.clave_hash)
+     AND admin_puede_autorizar(c.id_usuario)
+   LIMIT 1;
+  IF v_autoriza IS NULL THEN
+    INSERT INTO clave_intentos (id_usuario, fallos) VALUES (v_usuario, 1)
+    ON CONFLICT (id_usuario) DO UPDATE
+       SET fallos = CASE WHEN clave_intentos.fallos + 1 >= 5 THEN 0
+                         ELSE clave_intentos.fallos + 1 END,
+           bloqueado_hasta = CASE WHEN clave_intentos.fallos + 1 >= 5
+                                  THEN now() + interval '15 minutes'
+                                  ELSE clave_intentos.bloqueado_hasta END;
+    RETURN 'clave_incorrecta';
+  END IF;
+  DELETE FROM clave_intentos WHERE id_usuario = v_usuario;
+
+  v_nota := 'venta cancelada ' || v.nro_comprobante || ': ' || trim(_motivo);
 
   -- Stock de productos por cantidad/peso.
   UPDATE stock s
@@ -93,7 +220,7 @@ BEGIN
   INSERT INTO movimientos_piezas (id_pieza, id_empresa, tipo, estado_anterior, estado_nuevo,
                                   id_usuario, id_referencia, referencia_tipo, notas)
   SELECT pi.id, pi.id_empresa, 'devolucion', 'vendida', 'disponible', v_usuario,
-         v.id, 'venta', 'venta cancelada ' || v.nro_comprobante || ': ' || trim(_motivo)
+         v.id, 'venta', v_nota
     FROM piezas_inventario pi
     JOIN detalle_venta dv ON dv.id = pi.id_detalle_venta
    WHERE dv.id_venta = v.id
@@ -123,12 +250,13 @@ BEGIN
 
   UPDATE ventas
      SET estado = 'anulada', anulada_en = now(), anulada_por = v_usuario,
-         motivo_anulacion = trim(_motivo)
+         autorizada_por = v_autoriza, motivo_anulacion = trim(_motivo)
    WHERE id = v.id;
+  RETURN 'ok';
 END;
 $$;
-REVOKE ALL ON FUNCTION public.anular_venta(integer, text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.anular_venta(integer, text) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.anular_venta(integer, text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.anular_venta(integer, text, text) TO authenticated, service_role;
 
 -- Cierre de caja: las salidas por cancelación restan.
 CREATE OR REPLACE FUNCTION public.sumarventasmetodopagomovcierrecaja(_id_cierre_caja integer)
