@@ -243,12 +243,17 @@ Deno.serve(async (req) => {
     if (item.tipo === "pieza") {
       const { data: pieza } = await supabaseAdmin
         .from("piezas_inventario")
-        .select("id, id_producto, precio_venta, precio_oferta, costo, estado, productos(nombre)")
+        .select("id, id_producto, precio_venta, precio_oferta, costo, estado, productos(nombre, visible_ecommerce)")
         .eq("id", item.idPieza)
         .eq("id_empresa", ID_EMPRESA)
         .maybeSingle();
 
-      if (!pieza || pieza.estado !== "disponible") {
+      if (
+        !pieza ||
+        pieza.estado !== "disponible" ||
+        // @ts-ignore -- select anidado de supabase-js
+        pieza.productos?.visible_ecommerce === false
+      ) {
         fallidas.push(`pieza:${item.idPieza}`);
         continue;
       }
@@ -273,12 +278,12 @@ Deno.serve(async (req) => {
       }
       const { data: producto } = await supabaseAdmin
         .from("productos")
-        .select("id, nombre, precio_venta, precio_compra, activo")
+        .select("id, nombre, precio_venta, precio_compra, activo, visible_ecommerce")
         .eq("id", item.idProducto)
         .eq("id_empresa", ID_EMPRESA)
         .maybeSingle();
 
-      if (!producto || !producto.activo) {
+      if (!producto || !producto.activo || !producto.visible_ecommerce) {
         fallidas.push(`producto:${item.idProducto}`);
         continue;
       }
