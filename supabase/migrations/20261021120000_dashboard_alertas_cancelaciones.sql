@@ -15,6 +15,10 @@
 --     POS, apartados y órdenes de Mercado Libre. No cuenta los pedidos de la
 --     tienda en línea que se anulan por no pagarse, porque nunca se cobraron.
 --     ML no guarda cuándo se canceló: se usa la fecha de la venta.
+--   * dashboard_ventas_por_hora (mapa de calor) recibe la zona _zona: antes
+--     pasaba las ventas de la tienda y ML siempre a la hora del centro de
+--     México, y en otras zonas (p. ej. Baja California) quedaban corridas 1-2
+--     horas. El rango de fechas también se compara contra la fecha local.
 
 CREATE OR REPLACE FUNCTION public.dashboard_alertas_inventario(
   _id_empresa          integer,
@@ -142,7 +146,41 @@ SELECT c.id, c.nro_comprobante,
  ORDER BY c.cancelada_local DESC;
 $function$;
 
+DROP FUNCTION IF EXISTS public.dashboard_ventas_por_hora(integer, timestamp without time zone, timestamp without time zone);
+
+CREATE OR REPLACE FUNCTION public.dashboard_ventas_por_hora(
+  _id_empresa   integer,
+  _fecha_inicio timestamp without time zone,
+  _fecha_fin    timestamp without time zone,
+  _zona         text DEFAULT 'America/Mexico_City'
+)
+  RETURNS TABLE(dia integer, hora integer, ventas bigint, total numeric)
+  LANGUAGE sql
+  STABLE
+AS $function$
+WITH v AS (
+  SELECT CASE WHEN origen = 'pos' THEN fecha
+              ELSE (fecha AT TIME ZONE 'UTC') AT TIME ZONE _zona
+         END AS local,
+         monto_total
+    FROM ventas
+   WHERE id_empresa = _id_empresa
+     AND estado = 'confirmada'
+)
+SELECT extract(isodow FROM local)::integer AS dia,
+       extract(hour FROM local)::integer AS hora,
+       count(*) AS ventas,
+       round(sum(monto_total), 2) AS total
+  FROM v
+ WHERE DATE(local) >= DATE(_fecha_inicio)
+   AND DATE(local) <= DATE(_fecha_fin)
+ GROUP BY 1, 2
+ ORDER BY 1, 2;
+$function$;
+
 REVOKE ALL ON FUNCTION public.dashboard_alertas_inventario(integer, integer) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.dashboard_alertas_inventario(integer, integer) TO authenticated;
 REVOKE ALL ON FUNCTION public.dashboard_cancelaciones(integer, timestamp without time zone, timestamp without time zone, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.dashboard_cancelaciones(integer, timestamp without time zone, timestamp without time zone, text) TO authenticated;
+REVOKE ALL ON FUNCTION public.dashboard_ventas_por_hora(integer, timestamp without time zone, timestamp without time zone, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.dashboard_ventas_por_hora(integer, timestamp without time zone, timestamp without time zone, text) TO authenticated;
