@@ -193,7 +193,7 @@ const Container = styled.div`
     &--anulada {
       background: rgba(255, 90, 90, 0.1);
       border: 1px solid rgba(255, 90, 90, 0.35);
-      color: #ff8a80;
+      color: var(--c-error);
     }
   }
 
@@ -217,7 +217,7 @@ const Container = styled.div`
     &--anulada {
       background: rgba(255, 90, 90, 0.1);
       border: 1px solid rgba(255, 90, 90, 0.35);
-      color: #ff8a80;
+      color: var(--c-error);
     }
   }
 

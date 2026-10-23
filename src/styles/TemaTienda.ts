@@ -41,5 +41,11 @@ export const TemaTienda = createGlobalStyle<{ $paleta: PaletaTienda }>`
     --c-panel: ${({ $paleta }) => $paleta.panel};
     --c-texto: ${({ $paleta }) => $paleta.texto};
     --c-texto-rgb: ${({ $paleta }) => rgb($paleta.texto)};
+    /* Superficies y bordes translúcidos: blanco sobre fondo oscuro, tinta
+       sobre fondo claro. */
+    --c-capa-rgb: ${({ $paleta }) => ($paleta.claro ? "35, 28, 22" : "255, 255, 255")};
+    --c-hundido: ${({ $paleta }) => ($paleta.claro ? "rgba(35, 28, 22, 0.04)" : "rgba(0, 0, 0, 0.2)")};
+    --c-error: ${({ $paleta }) => ($paleta.claro ? "#c62828" : "#ff8a80")};
+    color-scheme: ${({ $paleta }) => ($paleta.claro ? "light" : "dark")};
   }
 `;

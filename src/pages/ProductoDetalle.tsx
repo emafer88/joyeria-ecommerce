@@ -770,7 +770,7 @@ const Container = styled.div`
         padding: 7px 9px;
         border-radius: 8px;
         border: 1px solid ${v.borderSutil};
-        background: rgba(255, 255, 255, 0.03);
+        background: rgba(var(--c-capa-rgb), 0.03);
         color: ${v.colorTexto};
         font-family: inherit;
         font-size: 13px;
@@ -831,7 +831,7 @@ const Container = styled.div`
       padding: 9px;
       border-radius: 8px;
       border: 1px solid ${v.borderSutil};
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(var(--c-capa-rgb), 0.03);
       color: ${v.colorTexto};
       font-family: inherit;
     }

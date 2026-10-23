@@ -204,7 +204,7 @@ const Container = styled.div`
       padding: 9px 11px;
       border-radius: 8px;
       border: 1px solid ${v.borderSutil};
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(var(--c-capa-rgb), 0.03);
       color: ${v.colorTexto};
       font-size: 14px;
       font-family: inherit;

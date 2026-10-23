@@ -102,7 +102,7 @@ const Container = styled.div`
   }
 
   .error {
-    color: #ff8a80;
+    color: var(--c-error);
   }
 
   .lista {
@@ -168,7 +168,7 @@ const Container = styled.div`
       background: rgba(var(--c-secundario-rgb), 0.1);
     }
     &--anulada {
-      color: #ff8a80;
+      color: var(--c-error);
       border-color: rgba(255, 90, 90, 0.35);
       background: rgba(255, 90, 90, 0.1);
     }

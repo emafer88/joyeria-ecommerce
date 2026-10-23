@@ -154,7 +154,7 @@ const Container = styled.div`
       height: 64px;
       border-radius: 8px;
       object-fit: cover;
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(var(--c-capa-rgb), 0.05);
     }
   }
 
@@ -180,7 +180,7 @@ const Container = styled.div`
     padding: 7px;
     border-radius: 8px;
     border: 1px solid ${v.borderSutil};
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(var(--c-capa-rgb), 0.03);
     color: ${v.colorTexto};
     font-family: inherit;
   }

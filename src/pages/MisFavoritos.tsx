@@ -61,7 +61,7 @@ const Container = styled.div`
   }
 
   .error {
-    color: #ff8a80;
+    color: var(--c-error);
   }
 
   .grilla {

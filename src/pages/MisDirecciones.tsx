@@ -193,7 +193,7 @@ const Container = styled.div`
   }
 
   .error {
-    color: #ff8a80;
+    color: var(--c-error);
   }
 
   .lista {
@@ -273,7 +273,7 @@ const Container = styled.div`
       }
       &.peligro:hover:not(:disabled) {
         border-color: rgba(255, 90, 90, 0.5);
-        color: #ff8a80;
+        color: var(--c-error);
       }
     }
   }

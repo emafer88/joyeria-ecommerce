@@ -65,6 +65,8 @@ export interface PaletaTienda {
   fondo: [string, string, string];
   panel: string;
   texto: string;
+  /** Fondo claro: cambia superficies, bordes y el rojo de error. */
+  claro?: boolean;
 }
 
 export interface DisenoTienda {
@@ -75,8 +77,8 @@ export interface DisenoTienda {
   contacto: Contacto;
 }
 
-// Todas sobre fondo oscuro: el resto de la tienda (bordes y superficies
-// translúcidas en blanco) está pensado para eso.
+// Oscuras primero, después las claras (`claro: true`). En las claras el
+// principal también se usa como texto (precios, enlaces): contraste ≥ 4.5.
 export const PALETAS_TIENDA: PaletaTienda[] = [
   {
     id: "clasica",
@@ -137,6 +139,50 @@ export const PALETAS_TIENDA: PaletaTienda[] = [
     fondo: ["#2d0f19", "#12080b", "#0b0507"],
     panel: "#1f0f14",
     texto: "#fbeff1",
+  },
+  {
+    id: "perla",
+    nombre: "Perla",
+    principal: "#8f6300",
+    principalOscuro: "#6b4a00",
+    secundario: "#b07a9a",
+    fondo: ["#ffffff", "#faf7f2", "#f3eee6"],
+    panel: "#ffffff",
+    texto: "#2a2118",
+    claro: true,
+  },
+  {
+    id: "rosa-palo",
+    nombre: "Rosa palo",
+    principal: "#a8455e",
+    principalOscuro: "#7d2f44",
+    secundario: "#c9a227",
+    fondo: ["#fff7f8", "#fdf0f2", "#f8e4e8"],
+    panel: "#ffffff",
+    texto: "#3a2228",
+    claro: true,
+  },
+  {
+    id: "salvia",
+    nombre: "Salvia",
+    principal: "#2f6b4c",
+    principalOscuro: "#1f4c35",
+    secundario: "#b08d57",
+    fondo: ["#f7faf7", "#eef4ef", "#e3ece5"],
+    panel: "#ffffff",
+    texto: "#1f2d25",
+    claro: true,
+  },
+  {
+    id: "porcelana",
+    nombre: "Porcelana",
+    principal: "#2456a6",
+    principalOscuro: "#173d7a",
+    secundario: "#c08a2e",
+    fondo: ["#ffffff", "#f4f7fb", "#e9eef6"],
+    panel: "#ffffff",
+    texto: "#1b2433",
+    claro: true,
   },
 ];
 
