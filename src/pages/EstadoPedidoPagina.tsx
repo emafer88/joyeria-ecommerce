@@ -181,13 +181,13 @@ const Container = styled.div`
     font-weight: 700;
     margin-bottom: 10px;
     &--confirmada {
-      background: rgba(243, 210, 12, 0.12);
+      background: rgba(var(--c-principal-rgb), 0.12);
       border: 1px solid ${v.borderDorado};
       color: ${v.colorPrincipal};
     }
     &--pendiente {
-      background: rgba(144, 70, 255, 0.12);
-      border: 1px solid rgba(144, 70, 255, 0.4);
+      background: rgba(var(--c-secundario-rgb), 0.12);
+      border: 1px solid rgba(var(--c-secundario-rgb), 0.4);
       color: ${v.colorExito};
     }
     &--anulada {
@@ -205,13 +205,13 @@ const Container = styled.div`
     font-weight: 700;
     margin-bottom: 14px;
     &--confirmada {
-      background: rgba(243, 210, 12, 0.12);
+      background: rgba(var(--c-principal-rgb), 0.12);
       border: 1px solid ${v.borderDorado};
       color: ${v.colorPrincipal};
     }
     &--pendiente {
-      background: rgba(144, 70, 255, 0.12);
-      border: 1px solid rgba(144, 70, 255, 0.4);
+      background: rgba(var(--c-secundario-rgb), 0.12);
+      border: 1px solid rgba(var(--c-secundario-rgb), 0.4);
       color: ${v.colorExito};
     }
     &--anulada {
@@ -276,7 +276,7 @@ const Container = styled.div`
     li.actual .punto {
       border-color: ${v.borderDorado};
       color: ${v.colorPrincipal};
-      background: rgba(243, 210, 12, 0.12);
+      background: rgba(var(--c-principal-rgb), 0.12);
     }
     li.hecho .nombre,
     li.actual .nombre {
@@ -333,7 +333,7 @@ const Container = styled.div`
     padding: 12px;
     border-radius: 12px;
     border: 1px solid ${v.borderDorado};
-    background: rgba(243, 210, 12, 0.1);
+    background: rgba(var(--c-principal-rgb), 0.1);
     color: ${v.colorPrincipal};
     font-weight: 700;
     font-size: 14px;
@@ -341,7 +341,7 @@ const Container = styled.div`
     cursor: pointer;
     transition: 0.2s;
     &:hover {
-      background: rgba(243, 210, 12, 0.18);
+      background: rgba(var(--c-principal-rgb), 0.18);
     }
   }
 

@@ -1,27 +1,35 @@
 import styled from "styled-components";
 import { FiInstagram, FiFacebook } from "react-icons/fi";
 import { FaTiktok } from "react-icons/fa";
-import { NEGOCIO } from "../../data/negocio";
+import type { Contacto } from "../../data/disenoTienda";
 import { v } from "../../styles/variables";
 
-export function SeccionRedesSociales() {
+interface Props {
+  titulo: string;
+  subtitulo: string;
+  contacto: Contacto;
+}
+
+// Sin ninguna red cargada en el admin, la sección no se muestra.
+export function SeccionRedesSociales({ titulo, subtitulo, contacto }: Props) {
+  if (!contacto.instagram && !contacto.facebook && !contacto.tiktok) return null;
   return (
     <Container>
-      <h2>Seguinos en redes</h2>
-      <p>Novedades, lanzamientos y detrás de escena de cada pieza.</p>
+      {titulo && <h2>{titulo}</h2>}
+      {subtitulo && <p>{subtitulo}</p>}
       <div className="iconos">
-        {NEGOCIO.instagram && (
-          <a href={NEGOCIO.instagram} target="_blank" rel="noreferrer" aria-label="Instagram">
+        {contacto.instagram && (
+          <a href={contacto.instagram} target="_blank" rel="noreferrer" aria-label="Instagram">
             <FiInstagram />
           </a>
         )}
-        {NEGOCIO.facebook && (
-          <a href={NEGOCIO.facebook} target="_blank" rel="noreferrer" aria-label="Facebook">
+        {contacto.facebook && (
+          <a href={contacto.facebook} target="_blank" rel="noreferrer" aria-label="Facebook">
             <FiFacebook />
           </a>
         )}
-        {NEGOCIO.tiktok && (
-          <a href={NEGOCIO.tiktok} target="_blank" rel="noreferrer" aria-label="TikTok">
+        {contacto.tiktok && (
+          <a href={contacto.tiktok} target="_blank" rel="noreferrer" aria-label="TikTok">
             <FaTiktok />
           </a>
         )}

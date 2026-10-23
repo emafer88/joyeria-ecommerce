@@ -10,7 +10,7 @@ import { v } from "../../styles/variables";
 // un emoji/glifo corto: hay que renderizarlo como <img>, no como texto.
 const esUrlImagen = (icono: string) => /^https?:\/\//.test(icono);
 
-export function SeccionCategorias() {
+export function SeccionCategorias({ titulo }: { titulo: string }) {
   const { data: categorias, isLoading } = useCategoriasQuery();
   const setCategoria = useFiltrosCatalogoStore((s) => s.setCategoria);
   const navigate = useNavigate();
@@ -24,7 +24,7 @@ export function SeccionCategorias() {
 
   return (
     <Container>
-      <h2>Categorías</h2>
+      {titulo && <h2>{titulo}</h2>}
       <div className="grilla">
         {categorias.map((c) => (
           <button
@@ -101,7 +101,7 @@ const Container = styled.section`
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: rgba(243, 210, 12, 0.12);
+    background: rgba(var(--c-principal-rgb), 0.12);
     color: ${v.colorPrincipal};
     font-size: 20px;
     overflow: hidden;

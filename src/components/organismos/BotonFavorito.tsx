@@ -51,7 +51,7 @@ const Boton = styled.button<{ $marcado: boolean }>`
   align-items: center;
   justify-content: center;
   border: 1px solid ${v.borderSutil};
-  background: rgba(10, 9, 15, 0.6);
+  background: rgba(var(--c-fondo-rgb), 0.6);
   backdrop-filter: blur(4px);
   color: ${(p) => (p.$marcado ? "#ff5a7a" : v.colorTexto)};
   font-size: 16px;

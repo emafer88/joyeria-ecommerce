@@ -84,7 +84,7 @@ const Container = styled.div`
     font-weight: 700;
     margin-bottom: 8px;
     &--exito {
-      background: rgba(243, 210, 12, 0.12);
+      background: rgba(var(--c-principal-rgb), 0.12);
       border: 1px solid ${v.borderDorado};
       color: ${v.colorPrincipal};
     }
@@ -94,8 +94,8 @@ const Container = styled.div`
       color: #ff8a80;
     }
     &--pendiente {
-      background: rgba(144, 70, 255, 0.12);
-      border: 1px solid rgba(144, 70, 255, 0.4);
+      background: rgba(var(--c-secundario-rgb), 0.12);
+      border: 1px solid rgba(var(--c-secundario-rgb), 0.4);
       color: ${v.colorExito};
     }
   }

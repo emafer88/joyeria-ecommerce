@@ -51,6 +51,12 @@ export async function MostrarCostoEnvio(): Promise<number> {
   return data ?? 0;
 }
 
+export async function MostrarDiseno(): Promise<unknown> {
+  const { data, error } = await supabase.rpc("ecommerce_diseno");
+  if (error) throw new Error(error.message);
+  return data ?? {};
+}
+
 export async function MostrarProductos(
   filtros: FiltrosCatalogo
 ): Promise<PaginaProductos> {

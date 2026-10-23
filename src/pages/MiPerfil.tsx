@@ -132,7 +132,7 @@ const Container = styled.div`
     padding: 10px 22px;
     border-radius: 20px;
     border: 1px solid ${v.borderDorado};
-    background: rgba(243, 210, 12, 0.1);
+    background: rgba(var(--c-principal-rgb), 0.1);
     color: ${v.colorPrincipal};
     font-weight: 600;
     font-size: 13.5px;
@@ -140,7 +140,7 @@ const Container = styled.div`
     cursor: pointer;
     transition: 0.2s;
     &:hover:not(:disabled) {
-      background: rgba(243, 210, 12, 0.18);
+      background: rgba(var(--c-principal-rgb), 0.18);
     }
     &:disabled {
       opacity: 0.6;

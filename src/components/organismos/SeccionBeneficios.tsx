@@ -1,44 +1,48 @@
 import styled from "styled-components";
-import { FiTruck, FiShield, FiRefreshCw, FiLock } from "react-icons/fi";
+import type { IconType } from "react-icons";
+import {
+  FiTruck,
+  FiShield,
+  FiRefreshCw,
+  FiLock,
+  FiGift,
+  FiHeadphones,
+  FiAward,
+} from "react-icons/fi";
+import { GiCutDiamond } from "react-icons/gi";
+import type { Beneficio, IconoBeneficio } from "../../data/disenoTienda";
 import { v } from "../../styles/variables";
 
-const BENEFICIOS = [
-  {
-    icono: FiTruck,
-    titulo: "Envío a todo México",
-    texto: "Empaque seguro con seguimiento en cada pedido.",
-  },
-  {
-    icono: FiShield,
-    titulo: "Garantía en tus piezas",
-    texto: "Respaldo en materiales y fabricación.",
-  },
-  {
-    icono: FiRefreshCw,
-    titulo: "Devoluciones simples",
-    texto: "Cambios y devoluciones sin complicaciones.",
-  },
-  {
-    icono: FiLock,
-    titulo: "Pagos 100% seguros",
-    texto: "Checkout protegido en cada compra.",
-  },
-];
+const ICONOS: Record<IconoBeneficio, IconType> = {
+  envio: FiTruck,
+  garantia: FiShield,
+  devolucion: FiRefreshCw,
+  pago: FiLock,
+  regalo: FiGift,
+  diamante: GiCutDiamond,
+  atencion: FiHeadphones,
+  certificado: FiAward,
+};
 
-export function SeccionBeneficios() {
+export function SeccionBeneficios({ beneficios }: { beneficios: Beneficio[] }) {
+  const conTexto = beneficios.filter((b) => b.titulo || b.texto);
+  if (conTexto.length === 0) return null;
   return (
     <Container>
-      {BENEFICIOS.map(({ icono: Icono, titulo, texto }) => (
-        <div className="item" key={titulo}>
-          <span className="icono">
-            <Icono />
-          </span>
-          <div>
-            <h3>{titulo}</h3>
-            <p>{texto}</p>
+      {conTexto.map(({ icono, titulo, texto }, i) => {
+        const Icono = ICONOS[icono];
+        return (
+          <div className="item" key={i}>
+            <span className="icono">
+              <Icono />
+            </span>
+            <div>
+              <h3>{titulo}</h3>
+              <p>{texto}</p>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </Container>
   );
 }
@@ -72,7 +76,7 @@ const Container = styled.section`
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: rgba(243, 210, 12, 0.12);
+    background: rgba(var(--c-principal-rgb), 0.12);
     color: ${v.colorPrincipal};
     font-size: 18px;
   }

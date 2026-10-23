@@ -2,22 +2,24 @@ import styled from "styled-components";
 import { Link } from "react-router-dom";
 import { FiMapPin, FiPhone, FiMail, FiInstagram, FiFacebook } from "react-icons/fi";
 import { FaWhatsapp, FaTiktok } from "react-icons/fa";
-import { NEGOCIO } from "../../data/negocio";
+import { useDiseno } from "../../tanstack/DisenoStack";
 import { v } from "../../styles/variables";
 import logo from "../../assets/logo.png";
 
 export function Footer() {
   const anio = new Date().getFullYear();
-  const linkWhatsapp = `https://wa.me/${NEGOCIO.whatsapp}`;
+  const { contacto } = useDiseno();
+  const linkWhatsapp = `https://wa.me/${contacto.whatsapp}`;
+  const hayRedes = contacto.instagram || contacto.facebook || contacto.tiktok;
 
   return (
     <Container>
       <div className="columnas">
         <div className="col marca">
           <div className="isotipo">
-            <img src={logo} alt={NEGOCIO.nombre} />
+            <img src={logo} alt={contacto.nombre} />
           </div>
-          <p>Joyería en oro y plata, piezas pensadas para durar toda la vida.</p>
+          {contacto.descripcion && <p>{contacto.descripcion}</p>}
         </div>
 
         <div className="col">
@@ -30,44 +32,54 @@ export function Footer() {
 
         <div className="col">
           <h4>Contacto</h4>
-          <span className="dato">
-            <FiMapPin /> {NEGOCIO.direccion}
-          </span>
-          <a className="dato" href={`tel:${NEGOCIO.telefono}`}>
-            <FiPhone /> {NEGOCIO.telefono}
-          </a>
-          <a className="dato" href={`mailto:${NEGOCIO.email}`}>
-            <FiMail /> {NEGOCIO.email}
-          </a>
-          <a className="dato" href={linkWhatsapp} target="_blank" rel="noreferrer">
-            <FaWhatsapp /> WhatsApp
-          </a>
+          {contacto.direccion && (
+            <span className="dato">
+              <FiMapPin /> {contacto.direccion}
+            </span>
+          )}
+          {contacto.telefono && (
+            <a className="dato" href={`tel:${contacto.telefono.replace(/\s/g, "")}`}>
+              <FiPhone /> {contacto.telefono}
+            </a>
+          )}
+          {contacto.email && (
+            <a className="dato" href={`mailto:${contacto.email}`}>
+              <FiMail /> {contacto.email}
+            </a>
+          )}
+          {contacto.whatsapp && (
+            <a className="dato" href={linkWhatsapp} target="_blank" rel="noreferrer">
+              <FaWhatsapp /> WhatsApp
+            </a>
+          )}
         </div>
 
-        <div className="col">
-          <h4>Seguinos</h4>
-          <div className="redes">
-            {NEGOCIO.instagram && (
-              <a href={NEGOCIO.instagram} target="_blank" rel="noreferrer" aria-label="Instagram">
-                <FiInstagram />
-              </a>
-            )}
-            {NEGOCIO.facebook && (
-              <a href={NEGOCIO.facebook} target="_blank" rel="noreferrer" aria-label="Facebook">
-                <FiFacebook />
-              </a>
-            )}
-            {NEGOCIO.tiktok && (
-              <a href={NEGOCIO.tiktok} target="_blank" rel="noreferrer" aria-label="TikTok">
-                <FaTiktok />
-              </a>
-            )}
+        {hayRedes && (
+          <div className="col">
+            <h4>Síguenos</h4>
+            <div className="redes">
+              {contacto.instagram && (
+                <a href={contacto.instagram} target="_blank" rel="noreferrer" aria-label="Instagram">
+                  <FiInstagram />
+                </a>
+              )}
+              {contacto.facebook && (
+                <a href={contacto.facebook} target="_blank" rel="noreferrer" aria-label="Facebook">
+                  <FiFacebook />
+                </a>
+              )}
+              {contacto.tiktok && (
+                <a href={contacto.tiktok} target="_blank" rel="noreferrer" aria-label="TikTok">
+                  <FaTiktok />
+                </a>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="copyright">
-        © {anio} {NEGOCIO.nombre}. Todos los derechos reservados.
+        © {anio} {contacto.nombre}. Todos los derechos reservados.
       </div>
     </Container>
   );

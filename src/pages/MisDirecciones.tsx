@@ -233,7 +233,7 @@ const Container = styled.div`
     border-radius: 20px;
     color: ${v.colorPrincipal};
     border: 1px solid ${v.borderDorado};
-    background: rgba(243, 210, 12, 0.1);
+    background: rgba(var(--c-principal-rgb), 0.1);
   }
 
   .linea {
@@ -298,7 +298,7 @@ const Container = styled.div`
     cursor: pointer;
     transition: 0.2s;
     &:hover {
-      background: rgba(243, 210, 12, 0.08);
+      background: rgba(var(--c-principal-rgb), 0.08);
     }
   }
 `;

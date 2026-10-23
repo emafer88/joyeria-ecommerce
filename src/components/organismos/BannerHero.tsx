@@ -8,23 +8,23 @@ import type { Banner } from "../../types/dominio";
 // admin (proyecto-joyeria → Productos → Banners), o si esa carga falla.
 const SLIDES_RESPALDO = [
   {
-    fondo: "linear-gradient(135deg, #2a1f45 0%, #0b0a10 70%)",
+    fondo: "linear-gradient(135deg, rgba(var(--c-secundario-rgb), 0.28) 0%, var(--c-fondo-2) 70%)",
     etiqueta: "Colección Cubiks",
     titulo: "Piezas únicas en oro y plata",
     texto: "Diseños atemporales, hechos para durar toda la vida.",
     link: "/catalogo",
   },
   {
-    fondo: "linear-gradient(135deg, #3a2f0a 0%, #0b0a10 70%)",
+    fondo: "linear-gradient(135deg, rgba(var(--c-principal-rgb), 0.2) 0%, var(--c-fondo-2) 70%)",
     etiqueta: "Envíos a todo México",
-    titulo: "Recibí tu joya en la puerta de tu casa",
+    titulo: "Recibe tu joya en la puerta de tu casa",
     texto: "Empaque seguro y seguimiento en cada pedido.",
     link: "/catalogo",
   },
   {
-    fondo: "linear-gradient(135deg, #401f3d 0%, #0b0a10 70%)",
+    fondo: "linear-gradient(135deg, rgba(var(--c-secundario-rgb), 0.18) 0%, var(--c-fondo-1) 30%, var(--c-fondo-2) 70%)",
     etiqueta: "Compra segura",
-    titulo: "Pagá con total confianza",
+    titulo: "Paga con total confianza",
     texto: "Checkout protegido y garantía en todas nuestras piezas.",
     link: "/catalogo",
   },
@@ -152,7 +152,7 @@ const Container = styled.section`
     border-radius: 30px;
     border: 1px solid ${v.borderDorado};
     background: ${v.colorPrincipal};
-    color: #1a1206;
+    color: var(--c-sobre-principal);
     font-weight: 700;
     font-size: 14px;
     text-decoration: none;

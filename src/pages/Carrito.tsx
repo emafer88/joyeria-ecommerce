@@ -235,11 +235,11 @@ const Container = styled.div`
     .checkout {
       background: ${v.colorPrincipal};
       border-color: ${v.borderDorado};
-      color: #1a1206;
+      color: var(--c-sobre-principal);
       font-weight: 700;
       &:hover {
         filter: brightness(1.08);
-        color: #1a1206;
+        color: var(--c-sobre-principal);
       }
     }
   }
