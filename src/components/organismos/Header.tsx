@@ -180,7 +180,7 @@ const Container = styled.header`
       border-radius: 20px 0 0 20px;
       border: 1px solid ${v.borderSutil};
       border-right: none;
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(var(--c-capa-rgb), 0.03);
       color: ${v.colorTexto};
       font-size: 13px;
       font-family: inherit;
@@ -201,7 +201,7 @@ const Container = styled.header`
       border-radius: 0 20px 20px 0;
       border: 1px solid ${v.borderSutil};
       border-left: none;
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(var(--c-capa-rgb), 0.03);
       color: ${v.colorTextoSuave};
       cursor: pointer;
       transition: 0.2s;

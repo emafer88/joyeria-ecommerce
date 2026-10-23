@@ -91,7 +91,7 @@ const Container = styled(Link)`
     position: relative;
     aspect-ratio: 1 / 1;
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(var(--c-capa-rgb), 0.03);
     /* Absoluta: así una foto alta no estira la caja cuadrada (con la imagen
        en el flujo, aspect-ratio cede ante su altura al terminar de cargar). */
     img {
@@ -120,7 +120,7 @@ const Container = styled(Link)`
       top: 8px;
       right: 8px;
       background: rgba(0, 0, 0, 0.7);
-      color: ${v.colorTexto};
+      color: #fff;
       font-size: 11px;
       padding: 3px 8px;
       border-radius: 20px;

@@ -32,6 +32,8 @@ const SLIDES_RESPALDO = [
 
 interface Slide {
   fondo: string;
+  /** Foto con oscurecido: el texto va blanco aunque la paleta sea clara. */
+  sobreImagen?: boolean;
   etiqueta?: string;
   titulo: string;
   texto?: string;
@@ -44,6 +46,7 @@ function aSlides(banners: Banner[] | undefined): Slide[] {
   if (!banners || banners.length === 0) return SLIDES_RESPALDO;
   return banners.map((b) => ({
     fondo: `linear-gradient(0deg, rgba(0,0,0,.55), rgba(0,0,0,.25)), url(${b.imagenUrl}) center / cover`,
+    sobreImagen: true,
     titulo: b.titulo,
     texto: b.subtitulo ?? undefined,
     link: b.linkDestino ?? "/catalogo",
@@ -78,6 +81,7 @@ export function BannerHero({ banners }: Props) {
   return (
     <Container
       style={{ background: slide.fondo }}
+      className={slide.sobreImagen ? "sobre-imagen" : undefined}
       onMouseEnter={() => setPausado(true)}
       onMouseLeave={() => setPausado(false)}
     >
@@ -117,6 +121,18 @@ const Container = styled.section`
   overflow: hidden;
   border-bottom: 1px solid ${v.borderSutil};
   transition: background 0.6s ease;
+
+  &.sobre-imagen {
+    h1 {
+      color: #fff;
+    }
+    p {
+      color: rgba(255, 255, 255, 0.85);
+    }
+    .puntos button:not(.activo) {
+      background: rgba(255, 255, 255, 0.35);
+    }
+  }
 
   .contenido {
     max-width: 560px;
@@ -176,7 +192,7 @@ const Container = styled.section`
       border-radius: 50%;
       border: none;
       padding: 0;
-      background: rgba(255, 255, 255, 0.25);
+      background: rgba(var(--c-capa-rgb), 0.25);
       cursor: pointer;
       transition: 0.2s;
       &.activo {

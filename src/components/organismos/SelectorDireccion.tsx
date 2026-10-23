@@ -195,7 +195,7 @@ const Caja = styled.div`
     padding: 16px;
     border: 1px solid ${v.borderSutil};
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(var(--c-capa-rgb), 0.02);
     display: flex;
     flex-direction: column;
     gap: 14px;

@@ -88,7 +88,7 @@ export function Footer() {
 const Container = styled.footer`
   margin-top: 60px;
   border-top: 1px solid ${v.borderSutil};
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--c-hundido);
 
   .columnas {
     max-width: 1180px;
