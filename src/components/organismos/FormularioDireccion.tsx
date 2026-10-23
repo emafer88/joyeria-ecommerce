@@ -159,13 +159,13 @@ export function FormularioDireccion({
           setEstadoUbicacion("ok");
           setMensajeUbicacion(
             datos
-              ? "Ubicación detectada: revisá los datos y completá lo que falte."
-              : "Ubicación detectada, pero no se pudo traducir a dirección: completá a mano."
+              ? "Ubicación detectada: revisa los datos y completa lo que falte."
+              : "Ubicación detectada, pero no se pudo traducir a dirección: completa a mano."
           );
         } catch {
           setEstadoUbicacion("ok");
           setMensajeUbicacion(
-            "Ubicación detectada, pero no se pudo traducir a dirección: completá a mano."
+            "Ubicación detectada, pero no se pudo traducir a dirección: completa a mano."
           );
         } finally {
           setUbicando(false);
@@ -176,8 +176,8 @@ export function FormularioDireccion({
         setEstadoUbicacion("error");
         setMensajeUbicacion(
           err.code === err.PERMISSION_DENIED
-            ? "Permiso de ubicación denegado. Completá la dirección a mano."
-            : "No se pudo obtener tu ubicación. Completá la dirección a mano."
+            ? "Permiso de ubicación denegado. Completa la dirección a mano."
+            : "No se pudo obtener tu ubicación. Completa la dirección a mano."
         );
       },
       { enableHighAccuracy: true, timeout: 10000 }
@@ -256,7 +256,7 @@ export function FormularioDireccion({
           {buscandoCp && <em className="info">Buscando…</em>}
           {cpSinResultados && (
             <em className="info">
-              CP no encontrado: completá estado, municipio y colonia a mano.
+              CP no encontrado: completa estado, municipio y colonia a mano.
             </em>
           )}
         </label>
@@ -293,7 +293,7 @@ export function FormularioDireccion({
                 }
               }}
             >
-              <option value="">Elegí una colonia</option>
+              <option value="">Elige una colonia</option>
               {lookup.colonias.map((c) => (
                 <option key={c} value={c}>
                   {c}

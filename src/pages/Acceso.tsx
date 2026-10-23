@@ -35,9 +35,9 @@ export function Acceso() {
   return (
     <Container>
       <span className="etiqueta">Tu cuenta</span>
-      <h1>Ingresá o registrate</h1>
+      <h1>Ingresa o regístrate</h1>
       <p>
-        Con tu cuenta guardás tus datos y seguís el estado de todos tus pedidos
+        Con tu cuenta guardas tus datos y sigues el estado de todos tus pedidos
         desde un solo lugar.
       </p>
 
@@ -51,7 +51,7 @@ export function Acceso() {
       </button>
 
       <span className="nota">
-        No necesitás cuenta para comprar: también podés hacer el checkout como
+        No necesitas cuenta para comprar: también puedes hacer el checkout como
         invitado.
       </span>
     </Container>

@@ -72,7 +72,7 @@ export function EstadoPedidoPagina() {
     const cantidad = recomprar(data.items);
     if (cantidad === 0) {
       toast.info(
-        "Este pedido era solo piezas únicas de joyería — visitá el producto para elegir una disponible."
+        "Este pedido era solo piezas únicas de joyería — visita el producto para elegir una disponible."
       );
       return;
     }

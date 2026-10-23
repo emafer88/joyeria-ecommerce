@@ -263,7 +263,7 @@ export function ProductoDetalle() {
 
           {producto.esJoyeria && (
             <div className="variantes">
-              <h2>Elegí material</h2>
+              <h2>Elige material</h2>
               <div className="lista-variantes">
                 {variantes?.map((v) => (
                   <button

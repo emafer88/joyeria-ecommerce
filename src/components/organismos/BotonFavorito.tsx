@@ -23,7 +23,7 @@ export function BotonFavorito({ idProducto, className }: Props) {
     e.preventDefault();
     e.stopPropagation();
     if (!session) {
-      toast.info("Iniciá sesión para guardar favoritos");
+      toast.info("Inicia sesión para guardar favoritos");
       return;
     }
     toggle.mutate({ idProducto, marcado });
