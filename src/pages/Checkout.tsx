@@ -46,11 +46,11 @@ export function Checkout() {
 
   const pagar = async () => {
     if (!contactoValido) {
-      toast.error("Completá tu nombre y un email válido.");
+      toast.error("Completa tu nombre y un email válido.");
       return;
     }
     if (!envio) {
-      toast.error("Elegí o cargá una dirección de envío.");
+      toast.error("Elige o agrega una dirección de envío.");
       return;
     }
     setEnviando(true);
@@ -129,9 +129,9 @@ export function Checkout() {
         {enviando
           ? "Redirigiendo a Mercado Pago..."
           : !contactoValido
-            ? "Completá tus datos de contacto"
+            ? "Completa tus datos de contacto"
             : !envio
-              ? "Elegí una dirección de envío"
+              ? "Elige una dirección de envío"
               : "Pagar con Mercado Pago"}
       </button>
 

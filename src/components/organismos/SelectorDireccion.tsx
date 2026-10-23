@@ -138,7 +138,7 @@ export function SelectorDireccion({ onEnvio }: Props) {
             </label>
           ) : (
             <p className="hint">
-              <Link to="/acceso?redirect=/checkout">Iniciá sesión</Link> para
+              <Link to="/acceso?redirect=/checkout">Inicia sesión</Link> para
               guardar tus direcciones y ver tus pedidos.
             </p>
           )}

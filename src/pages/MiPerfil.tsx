@@ -63,7 +63,7 @@ export function MiPerfil() {
           </button>
           <p className="nota">
             El nombre y el email vienen de tu cuenta de Google y no se
-            pueden editar acá.
+            pueden editar aquí.
           </p>
         </div>
       )}

@@ -22,7 +22,7 @@ export function MisFavoritos() {
       )}
       {data && data.length === 0 && (
         <p>
-          Todavía no tenés favoritos.{" "}
+          Todavía no tienes favoritos.{" "}
           <Link to="/catalogo">Ir al catálogo</Link>
         </p>
       )}

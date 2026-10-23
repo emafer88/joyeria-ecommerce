@@ -20,7 +20,7 @@ const TEXTOS: Record<
     icono: "✕",
     titulo: "El pago no se pudo procesar",
     mensaje:
-      "No te preocupes, no se descontó ninguna pieza. Podés intentar de nuevo.",
+      "No te preocupes, no se descontó ninguna pieza. Puedes intentar de nuevo.",
   },
   pendiente: {
     icono: "…",
