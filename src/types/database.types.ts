@@ -3134,6 +3134,7 @@ export type Database = {
         }[]
       }
       ecommerce_costo_envio: { Args: never; Returns: number }
+      ecommerce_diseno: { Args: never; Returns: Json }
       ecommerce_id_empresa: { Args: never; Returns: number }
       ecommerce_imagenes_producto: {
         Args: { _id_producto: number }

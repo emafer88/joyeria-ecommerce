@@ -1,16 +1,17 @@
-// Misma identidad visual que las páginas públicas del POS (InicioPublico,
-// Login): dorado + violeta sobre fondo oscuro, look "joyería premium".
+// Colores de la paleta elegida en el admin (Diseño de la tienda): son
+// variables CSS que define TemaTienda.ts; la de fábrica es dorado + violeta
+// sobre fondo oscuro, la misma identidad que las páginas públicas del POS.
 export const v = {
-  colorPrincipal: "#F3D20C",
-  colorPrincipalOscuro: "#a9760a",
-  colorExito: "#9046FF",
-  colorTexto: "#f4f1e8",
-  colorTextoSuave: "rgba(244, 241, 232, 0.7)",
-  colorTextoSuave2: "rgba(244, 241, 232, 0.55)",
-  bgFondo: "radial-gradient(circle at 15% 0%, #1c1730 0%, #0b0a10 45%, #08070c 100%)",
+  colorPrincipal: "var(--c-principal)",
+  colorPrincipalOscuro: "var(--c-principal-oscuro)",
+  colorExito: "var(--c-secundario)",
+  colorTexto: "var(--c-texto)",
+  colorTextoSuave: "rgba(var(--c-texto-rgb), 0.7)",
+  colorTextoSuave2: "rgba(var(--c-texto-rgb), 0.55)",
+  bgFondo: "radial-gradient(circle at 15% 0%, var(--c-fondo-1) 0%, var(--c-fondo-2) 45%, var(--c-fondo-3) 100%)",
   bgTarjeta: "rgba(255, 255, 255, 0.04)",
   bgTarjetaHover: "rgba(255, 255, 255, 0.06)",
   borderSutil: "rgba(255, 255, 255, 0.1)",
-  borderDorado: "rgba(243, 210, 12, 0.35)",
+  borderDorado: "rgba(var(--c-principal-rgb), 0.35)",
   borderRadius: "14px",
 };

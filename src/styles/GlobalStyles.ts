@@ -21,7 +21,7 @@ export const GlobalStyles = createGlobalStyle`
   }
   ::selection {
     background: ${v.colorPrincipal};
-    color: #1a1206;
+    color: var(--c-sobre-principal);
   }
   body::-webkit-scrollbar {
     width: 12px;

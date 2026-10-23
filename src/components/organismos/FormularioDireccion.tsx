@@ -440,7 +440,7 @@ const Form = styled.form`
       }
     }
     select option {
-      background: #16151f;
+      background: var(--c-panel);
       color: ${v.colorTexto};
     }
     em {
@@ -479,7 +479,7 @@ const Form = styled.form`
   .guardar {
     border-color: ${v.borderDorado};
     background: ${v.colorPrincipal};
-    color: #1a1206;
+    color: var(--c-sobre-principal);
     &:hover:not(:disabled) {
       filter: brightness(1.08);
     }

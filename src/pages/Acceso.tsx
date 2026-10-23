@@ -93,7 +93,7 @@ const Container = styled.div`
     border-radius: 12px;
     border: 1px solid ${v.borderSutil};
     background: ${v.colorTexto};
-    color: #1a1206;
+    color: var(--c-sobre-principal);
     font-weight: 700;
     font-size: 15px;
     font-family: inherit;

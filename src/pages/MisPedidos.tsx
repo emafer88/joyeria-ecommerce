@@ -160,12 +160,12 @@ const Container = styled.div`
     &--confirmada {
       color: ${v.colorPrincipal};
       border-color: ${v.borderDorado};
-      background: rgba(243, 210, 12, 0.1);
+      background: rgba(var(--c-principal-rgb), 0.1);
     }
     &--pendiente {
       color: ${v.colorExito};
-      border-color: rgba(144, 70, 255, 0.4);
-      background: rgba(144, 70, 255, 0.1);
+      border-color: rgba(var(--c-secundario-rgb), 0.4);
+      background: rgba(var(--c-secundario-rgb), 0.1);
     }
     &--anulada {
       color: #ff8a80;

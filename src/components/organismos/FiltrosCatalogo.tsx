@@ -237,7 +237,7 @@ const Container = styled.aside`
       }
     }
     select option {
-      background: #16151f;
+      background: var(--c-panel);
       color: ${v.colorTexto};
     }
   }

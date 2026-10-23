@@ -703,7 +703,7 @@ const Container = styled.div`
     border-color: ${v.borderDorado};
     color: ${v.colorPrincipal};
     font-weight: 700;
-    background: rgba(243, 210, 12, 0.1);
+    background: rgba(var(--c-principal-rgb), 0.1);
   }
 
   .lista-variantes button:disabled {
@@ -806,7 +806,7 @@ const Container = styled.div`
       border-radius: 20px;
       border: 1px solid ${v.borderDorado};
       background: ${v.colorPrincipal};
-      color: #1a1206;
+      color: var(--c-sobre-principal);
       font-weight: 700;
       cursor: pointer;
       transition: 0.2s;

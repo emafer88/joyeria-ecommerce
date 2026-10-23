@@ -128,7 +128,7 @@ const Container = styled.header`
   justify-content: space-between;
   gap: 12px 20px;
   padding: 16px 24px;
-  background: rgba(10, 9, 15, 0.75);
+  background: rgba(var(--c-fondo-rgb), 0.75);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid ${v.borderSutil};
 
@@ -311,14 +311,14 @@ const Container = styled.header`
     padding: 8px 18px;
     border-radius: 30px;
     border: 1px solid ${v.borderDorado};
-    background: rgba(243, 210, 12, 0.1);
+    background: rgba(var(--c-principal-rgb), 0.1);
     color: ${v.colorPrincipal};
     font-weight: 600;
     font-size: 13.5px;
     white-space: nowrap;
     transition: 0.2s;
     &:hover {
-      background: rgba(243, 210, 12, 0.18);
+      background: rgba(var(--c-principal-rgb), 0.18);
     }
   }
 

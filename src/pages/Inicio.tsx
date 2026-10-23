@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import { useBannersQuery, useProductosQuery } from "../tanstack/CatalogoStack";
 import { BannerHero } from "../components/organismos/BannerHero";
 import { SeccionCategorias } from "../components/organismos/SeccionCategorias";
@@ -7,6 +7,8 @@ import { BannerPromo } from "../components/organismos/BannerPromo";
 import { SeccionBeneficios } from "../components/organismos/SeccionBeneficios";
 import { SeccionRedesSociales } from "../components/organismos/SeccionRedesSociales";
 import type { FiltrosCatalogo } from "../types/dominio";
+import type { Seccion } from "../data/disenoTienda";
+import { useDiseno } from "../tanstack/DisenoStack";
 
 // Trae un lote grande sin filtrar: de ahí salen "nuevos" (mayor id = alta
 // más reciente), "en oferta" (precio_oferta ya viene resuelto por vigencia
@@ -33,6 +35,7 @@ const FILTROS_VITRINA: FiltrosCatalogo = {
 const CANTIDAD_POR_SECCION = 8;
 
 export function Inicio() {
+  const diseno = useDiseno();
   const { data: banners } = useBannersQuery();
   const { data, isLoading } = useProductosQuery(FILTROS_VITRINA);
   const productos = useMemo(() => data?.items ?? [], [data]);
@@ -69,34 +72,63 @@ export function Inicio() {
       .slice(0, CANTIDAD_POR_SECCION);
   }, [productos, nuevos, destacadosReales]);
 
+  // Orden, visibilidad y textos vienen del diseño editable (admin →
+  // Diseño de la tienda).
+  const render = (s: Seccion) => {
+    switch (s.id) {
+      case "banner":
+        return <BannerHero banners={banners} />;
+      case "categorias":
+        return <SeccionCategorias titulo={s.titulo} />;
+      case "destacados":
+        return (
+          <VitrinaProductos
+            titulo={s.titulo}
+            subtitulo={s.subtitulo}
+            productos={destacados}
+            cargando={isLoading}
+          />
+        );
+      case "ofertas":
+        return enOferta.length > 0 ? (
+          <VitrinaProductos
+            titulo={s.titulo}
+            subtitulo={s.subtitulo}
+            productos={enOferta}
+            cargando={isLoading}
+          />
+        ) : (
+          <BannerPromo promo={diseno.promo} />
+        );
+      case "nuevos":
+        return (
+          <VitrinaProductos
+            titulo={s.titulo}
+            subtitulo={s.subtitulo}
+            productos={nuevos}
+            cargando={isLoading}
+          />
+        );
+      case "beneficios":
+        return <SeccionBeneficios beneficios={diseno.beneficios} />;
+      case "redes":
+        return (
+          <SeccionRedesSociales
+            titulo={s.titulo}
+            subtitulo={s.subtitulo}
+            contacto={diseno.contacto}
+          />
+        );
+    }
+  };
+
   return (
     <>
-      <BannerHero banners={banners} />
-      <SeccionCategorias />
-      <VitrinaProductos
-        titulo="Productos destacados"
-        subtitulo="Una selección de nuestras piezas favoritas"
-        productos={destacados}
-        cargando={isLoading}
-      />
-      {enOferta.length > 0 ? (
-        <VitrinaProductos
-          titulo="Ofertas"
-          subtitulo="Precio especial por tiempo limitado"
-          productos={enOferta}
-          cargando={isLoading}
-        />
-      ) : (
-        <BannerPromo />
-      )}
-      <VitrinaProductos
-        titulo="Nuevos productos"
-        subtitulo="Lo último que llegó a la joyería"
-        productos={nuevos}
-        cargando={isLoading}
-      />
-      <SeccionBeneficios />
-      <SeccionRedesSociales />
+      {diseno.secciones
+        .filter((s) => s.visible)
+        .map((s) => (
+          <Fragment key={s.id}>{render(s)}</Fragment>
+        ))}
     </>
   );
 }
