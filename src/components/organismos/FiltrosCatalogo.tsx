@@ -6,12 +6,16 @@ import {
   useMaterialesQuery,
 } from "../../tanstack/CatalogoStack";
 import { useFiltrosCatalogoStore } from "../../store/FiltrosCatalogoStore";
+import { useFuncionesGiro } from "../../tanstack/LicenciaStack";
 import { v } from "../../styles/variables";
 
 export function FiltrosCatalogo() {
+  // Material y peso son de las piezas de joyería; talla, de los giros con tallas.
+  const { tiene } = useFuncionesGiro();
+  const conPiezas = tiene("piezas");
   const { data: categorias, isLoading } = useCategoriasQuery();
   const { data: etiquetas } = useEtiquetasQuery();
-  const { data: materiales } = useMaterialesQuery();
+  const { data: materiales } = useMaterialesQuery(conPiezas);
   const { data: marcas } = useMarcasQuery();
   const {
     filtros,
@@ -59,21 +63,23 @@ export function FiltrosCatalogo() {
         </select>
       </div>
 
-      <div className="campo">
-        <label htmlFor="material">Material</label>
-        <select
-          id="material"
-          value={filtros.material ?? ""}
-          onChange={(e) => setMaterial(e.target.value || null)}
-        >
-          <option value="">Todos</option>
-          {materiales?.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
-      </div>
+      {conPiezas && (
+        <div className="campo">
+          <label htmlFor="material">Material</label>
+          <select
+            id="material"
+            value={filtros.material ?? ""}
+            onChange={(e) => setMaterial(e.target.value || null)}
+          >
+            <option value="">Todos</option>
+            {materiales?.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {marcas && marcas.length > 0 && (
         <div className="campo">
@@ -144,45 +150,49 @@ export function FiltrosCatalogo() {
         </div>
       </div>
 
-      <div className="campo campo--rango">
-        <label>Peso (g)</label>
-        <div className="rango">
+      {conPiezas && (
+        <div className="campo campo--rango">
+          <label>Peso (g)</label>
+          <div className="rango">
+            <input
+              type="number"
+              placeholder="Min"
+              defaultValue={filtros.pesoMin ?? ""}
+              onChange={(e) =>
+                setRangoPeso(
+                  e.target.value ? Number(e.target.value) : null,
+                  filtros.pesoMax
+                )
+              }
+            />
+            <span>-</span>
+            <input
+              type="number"
+              placeholder="Max"
+              defaultValue={filtros.pesoMax ?? ""}
+              onChange={(e) =>
+                setRangoPeso(
+                  filtros.pesoMin,
+                  e.target.value ? Number(e.target.value) : null
+                )
+              }
+            />
+          </div>
+        </div>
+      )}
+
+      {(tiene("tallas") || conPiezas) && (
+        <div className="campo">
+          <label htmlFor="talla">Talla</label>
           <input
-            type="number"
-            placeholder="Min"
-            defaultValue={filtros.pesoMin ?? ""}
-            onChange={(e) =>
-              setRangoPeso(
-                e.target.value ? Number(e.target.value) : null,
-                filtros.pesoMax
-              )
-            }
-          />
-          <span>-</span>
-          <input
-            type="number"
-            placeholder="Max"
-            defaultValue={filtros.pesoMax ?? ""}
-            onChange={(e) =>
-              setRangoPeso(
-                filtros.pesoMin,
-                e.target.value ? Number(e.target.value) : null
-              )
-            }
+            id="talla"
+            type="text"
+            placeholder="Ej. 7, M..."
+            defaultValue={filtros.talla ?? ""}
+            onChange={(e) => setTalla(e.target.value || null)}
           />
         </div>
-      </div>
-
-      <div className="campo">
-        <label htmlFor="talla">Talla</label>
-        <input
-          id="talla"
-          type="text"
-          placeholder="Ej. 7, M..."
-          defaultValue={filtros.talla ?? ""}
-          onChange={(e) => setTalla(e.target.value || null)}
-        />
-      </div>
+      )}
 
       <label className="campo--check">
         <input

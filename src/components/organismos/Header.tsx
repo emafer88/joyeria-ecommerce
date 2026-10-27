@@ -6,6 +6,8 @@ import { FiSearch } from "react-icons/fi";
 import { useCantidadCarrito } from "../../store/CarritoStore";
 import { useAuthStore, nombreVisible } from "../../store/AuthStore";
 import { useFiltrosCatalogoStore } from "../../store/FiltrosCatalogoStore";
+import { useFuncionesGiro } from "../../tanstack/LicenciaStack";
+import { useDiseno } from "../../tanstack/DisenoStack";
 import { CerrarSesion } from "../../supabaseCrud/crudAuth";
 import { v } from "../../styles/variables";
 import logo from "../../assets/logo.png";
@@ -17,6 +19,9 @@ export function Header() {
   const setBuscador = useFiltrosCatalogoStore((s) => s.setBuscador);
   const navigate = useNavigate();
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const conPiezas = useFuncionesGiro().tiene("piezas");
+  // El nombre de la tienda sale de Diseño de la tienda → Contacto.
+  const { contacto } = useDiseno();
   const [busqueda, setBusqueda] = useState("");
 
   const buscar = (e: FormEvent) => {
@@ -39,9 +44,9 @@ export function Header() {
     <Container>
       <Link className="marca" to="/">
         <span className="isotipo">
-          <img src={logo} alt="Cubiks Jewelry" />
+          <img src={logo} alt={contacto.nombre} />
         </span>
-        <span className="nombre">CUBIKS JEWELRY</span>
+        <span className="nombre">{contacto.nombre.toUpperCase()}</span>
       </Link>
 
       <nav className="enlaces">
@@ -52,7 +57,7 @@ export function Header() {
       <form className="buscador" onSubmit={buscar}>
         <input
           type="search"
-          placeholder="Buscar joyas..."
+          placeholder={conPiezas ? "Buscar joyas..." : "Buscar productos..."}
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
         />
