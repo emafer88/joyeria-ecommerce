@@ -4,10 +4,12 @@ import { useFiltrosCatalogoStore } from "../store/FiltrosCatalogoStore";
 import { TarjetaProducto } from "../components/organismos/TarjetaProducto";
 import { FiltrosCatalogo } from "../components/organismos/FiltrosCatalogo";
 import { v } from "../styles/variables";
+import { useFuncionesGiro } from "../tanstack/LicenciaStack";
 
 export function Catalogo() {
   const { filtros, setPagina } = useFiltrosCatalogoStore();
   const { data, isLoading, isError, error } = useProductosQuery(filtros);
+  const conPiezas = useFuncionesGiro().tiene("piezas");
 
   const totalPaginas = data
     ? Math.max(1, Math.ceil(data.totalCount / filtros.tamPagina))
@@ -16,7 +18,7 @@ export function Catalogo() {
   return (
     <Container>
       <span className="etiqueta">Catálogo</span>
-      <h1>Piezas disponibles</h1>
+      <h1>{conPiezas ? "Piezas disponibles" : "Productos disponibles"}</h1>
       <div className="layout">
         <FiltrosCatalogo />
         <div className="resultados">

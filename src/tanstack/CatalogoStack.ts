@@ -52,11 +52,12 @@ export const useEtiquetasQuery = () =>
     staleTime: 5 * 60 * 1000,
   });
 
-export const useMaterialesQuery = () =>
+export const useMaterialesQuery = (habilitado = true) =>
   useQuery({
     queryKey: [K_MATERIALES],
     queryFn: MostrarMateriales,
     staleTime: 5 * 60 * 1000,
+    enabled: habilitado,
   });
 
 export const useMarcasQuery = () =>

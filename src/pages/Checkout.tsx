@@ -137,8 +137,9 @@ export function Checkout() {
 
       <p className="nota">
         Vas a ser redirigido a Mercado Pago para completar el pago de forma
-        segura. Al confirmar, reservamos tus piezas de joyería por un tiempo
-        limitado.
+        segura.
+        {items.some((i) => i.tipo === "pieza") &&
+          " Al confirmar, reservamos tus piezas de joyería por un tiempo limitado."}
       </p>
     </Container>
   );
