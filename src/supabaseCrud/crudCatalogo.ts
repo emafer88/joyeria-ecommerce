@@ -105,7 +105,7 @@ interface RespuestaCatalogo {
   total: number;
   items: FilaCatalogo[];
   facetas: {
-    categorias: OpcionFaceta[];
+    categorias: { id: number; nombre: string; id_padre: number | null; n: number }[];
     marcas: OpcionFaceta[];
     etiquetas: OpcionFaceta[];
     materiales: { valor: string; nombre: string; n: number }[];
@@ -162,7 +162,12 @@ export async function BuscarCatalogo(
       masVendido: p.mas_vendido,
     })),
     facetas: {
-      categorias: r.facetas.categorias,
+      categorias: r.facetas.categorias.map((c) => ({
+        id: c.id,
+        nombre: c.nombre,
+        n: c.n,
+        idPadre: c.id_padre,
+      })),
       marcas: r.facetas.marcas,
       etiquetas: r.facetas.etiquetas,
       materiales: r.facetas.materiales.map((m) => ({

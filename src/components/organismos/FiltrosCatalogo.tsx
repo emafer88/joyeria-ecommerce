@@ -63,7 +63,7 @@ function Opciones<T extends number | string>({
         return (
           <label
             key={o.id}
-            className={`opcion ${o.n === 0 && !marcada ? "vacia" : ""}`}
+            className={`opcion ${o.hija ? "hija" : ""} ${o.n === 0 && !marcada ? "vacia" : ""}`}
           >
             <input
               type="checkbox"
@@ -149,6 +149,16 @@ export function FiltrosCatalogo({
     return () => clearTimeout(t);
   }, [busqueda]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Cada padre seguido de sus subcategorías (con sangría).
+  const categorias = (facetas?.categorias ?? [])
+    .filter((c) => c.idPadre === null)
+    .flatMap((padre) => [
+      padre,
+      ...(facetas?.categorias ?? [])
+        .filter((c) => c.idPadre === padre.id)
+        .map((c) => ({ ...c, hija: true })),
+    ]);
+
   const rangos = rangosPrecio(
     facetas?.precio.min ?? null,
     facetas?.precio.max ?? null
@@ -169,10 +179,10 @@ export function FiltrosCatalogo({
         />
       </div>
 
-      {facetas && facetas.categorias.length > 1 && (
+      {categorias.length > 1 && (
         <Seccion titulo="Categoría">
           <Opciones
-            opciones={facetas.categorias}
+            opciones={categorias}
             elegidas={filtros.categorias}
             onAlternar={(id) => alternar("categorias", id)}
           />
@@ -379,6 +389,10 @@ const Container = styled.div`
     }
     &.vacia {
       opacity: 0.4;
+    }
+    &.hija {
+      padding-left: 22px;
+      font-size: 13.5px;
     }
   }
   .opcion--suelta {
