@@ -41,6 +41,20 @@ function filtrosActivos(
       quitar: { materiales: f.materiales.filter((x) => x !== m) },
     })
   );
+  Object.entries(f.atributos).forEach(([idAtributo, valores]) => {
+    const atributo = facetas?.atributos.find((a) => String(a.id) === idAtributo);
+    valores.forEach((idValor) =>
+      chips.push({
+        texto: nombre(atributo?.valores, idValor),
+        quitar: {
+          atributos: {
+            ...f.atributos,
+            [idAtributo]: valores.filter((x) => x !== idValor),
+          },
+        },
+      })
+    );
+  });
   f.marcas.forEach((id) =>
     chips.push({
       texto: nombre(facetas?.marcas, id),

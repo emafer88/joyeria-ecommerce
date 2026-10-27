@@ -3,8 +3,10 @@
 // Mismo patrón que `crudJoyeria.jsx` del proyecto POS original.
 import { supabase } from "./supabase.config";
 import type {
+  AtributoProducto,
   Banner,
   CategoriaCatalogo,
+  FacetaAtributo,
   FiltrosCatalogo,
   FiltrosTienda,
   ImagenProducto,
@@ -107,6 +109,7 @@ interface RespuestaCatalogo {
     marcas: OpcionFaceta[];
     etiquetas: OpcionFaceta[];
     materiales: { valor: string; nombre: string; n: number }[];
+    atributos: FacetaAtributo[];
     en_oferta: number;
     precio: { min: number | null; max: number | null };
   };
@@ -123,6 +126,7 @@ export async function BuscarCatalogo(
       marcas: filtros.marcas,
       etiquetas: filtros.etiquetas,
       materiales: filtros.materiales,
+      atributos: filtros.atributos,
       buscador: filtros.buscador,
       talla: filtros.talla,
       precio_min: filtros.precioMin,
@@ -166,6 +170,7 @@ export async function BuscarCatalogo(
         nombre: m.nombre,
         n: m.n,
       })),
+      atributos: r.facetas.atributos ?? [],
       enOferta: r.facetas.en_oferta,
       precio: r.facetas.precio,
     },
@@ -182,6 +187,16 @@ export async function MostrarBanners(): Promise<Banner[]> {
     imagenUrl: b.imagen_url,
     linkDestino: b.link_destino,
   }));
+}
+
+export async function MostrarAtributosProducto(
+  idProducto: number
+): Promise<AtributoProducto[]> {
+  const { data, error } = await supabase.rpc("ecommerce_producto_atributos", {
+    _id_producto: idProducto,
+  });
+  if (error) throw new Error(error.message);
+  return data ?? [];
 }
 
 export async function MostrarProductoDetalle(

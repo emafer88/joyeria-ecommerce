@@ -20,6 +20,21 @@ const numero = (v: string | null) => {
   return Number.isFinite(n) ? n : null;
 };
 
+// Cada atributo va en su propio parámetro: ?at1=2,3 (atributo 1, valores 2 y 3).
+const PREFIJO_ATRIBUTO = "at";
+
+function leerAtributos(p: URLSearchParams): Record<string, number[]> {
+  const atributos: Record<string, number[]> = {};
+  p.forEach((valor, clave) => {
+    const id = clave.slice(PREFIJO_ATRIBUTO.length);
+    if (clave.startsWith(PREFIJO_ATRIBUTO) && /^\d+$/.test(id)) {
+      const valores = ids(valor);
+      if (valores.length) atributos[id] = valores;
+    }
+  });
+  return atributos;
+}
+
 export function leerFiltros(p: URLSearchParams): FiltrosTienda {
   const orden = p.get("orden") as OrdenCatalogo | null;
   return {
@@ -27,6 +42,7 @@ export function leerFiltros(p: URLSearchParams): FiltrosTienda {
     marcas: ids(p.get("marca")),
     etiquetas: ids(p.get("etq")),
     materiales: textos(p.get("mat")),
+    atributos: leerAtributos(p),
     buscador: p.get("q") || null,
     talla: p.get("talla") || null,
     precioMin: numero(p.get("pmin")),
@@ -53,6 +69,9 @@ export function urlFiltros(f: Partial<FiltrosTienda>): string {
   lista("marca", f.marcas);
   lista("etq", f.etiquetas);
   lista("mat", f.materiales);
+  Object.entries(f.atributos ?? {}).forEach(([id, valores]) =>
+    lista(PREFIJO_ATRIBUTO + id, valores)
+  );
   valor("q", f.buscador);
   valor("talla", f.talla);
   valor("pmin", f.precioMin);
@@ -74,6 +93,7 @@ export function contarFiltros(f: FiltrosTienda): number {
     f.marcas.length +
     f.etiquetas.length +
     f.materiales.length +
+    Object.values(f.atributos).reduce((s, v) => s + v.length, 0) +
     (f.precioMin !== null || f.precioMax !== null ? 1 : 0) +
     (f.pesoMin !== null || f.pesoMax !== null ? 1 : 0) +
     (f.talla ? 1 : 0) +
@@ -105,6 +125,20 @@ export function useFiltrosUrl() {
     } as Partial<FiltrosTienda>);
   };
 
+  // Marca o desmarca un valor de un atributo (Género → Mujer).
+  const alternarAtributo = (idAtributo: number, idValor: number) => {
+    const actual = filtros.atributos[idAtributo] ?? [];
+    const nuevos = actual.includes(idValor)
+      ? actual.filter((x) => x !== idValor)
+      : [...actual, idValor];
+    const atributos: Record<string, number[]> = {
+      ...filtros.atributos,
+      [idAtributo]: nuevos,
+    };
+    if (nuevos.length === 0) delete atributos[idAtributo];
+    cambiar({ atributos });
+  };
+
   // Conserva búsqueda y orden; quita todo lo demás.
   const limpiar = () =>
     setParams(
@@ -113,5 +147,5 @@ export function useFiltrosUrl() {
       )
     );
 
-  return { filtros, cambiar, alternar, limpiar };
+  return { filtros, cambiar, alternar, alternarAtributo, limpiar };
 }

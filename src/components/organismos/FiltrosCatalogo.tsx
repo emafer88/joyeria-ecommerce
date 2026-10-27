@@ -127,7 +127,13 @@ function RangoLibre({
   );
 }
 
-export function FiltrosCatalogo({ facetas, filtros, cambiar, alternar }: Props) {
+export function FiltrosCatalogo({
+  facetas,
+  filtros,
+  cambiar,
+  alternar,
+  alternarAtributo,
+}: Props) {
   // Material y peso son de las piezas de joyería; talla, de los giros con tallas.
   const { tiene } = useFuncionesGiro();
   const conPiezas = tiene("piezas");
@@ -172,6 +178,16 @@ export function FiltrosCatalogo({ facetas, filtros, cambiar, alternar }: Props) 
           />
         </Seccion>
       )}
+
+      {facetas?.atributos.map((a) => (
+        <Seccion key={a.id} titulo={a.nombre}>
+          <Opciones
+            opciones={a.valores}
+            elegidas={filtros.atributos[a.id] ?? []}
+            onAlternar={(idValor) => alternarAtributo(a.id, idValor)}
+          />
+        </Seccion>
+      ))}
 
       <Seccion titulo="Precio">
         {rangos.map((r) => (
