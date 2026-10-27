@@ -2,7 +2,7 @@ import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { GiGemPendant } from "react-icons/gi";
 import { useCategoriasQuery } from "../../tanstack/CatalogoStack";
-import { useFiltrosCatalogoStore } from "../../store/FiltrosCatalogoStore";
+import { urlFiltros } from "../../hooks/useFiltrosUrl";
 import { v } from "../../styles/variables";
 
 // `categorias.icono` en la base es "-" (sin ícono) o la URL pública de una
@@ -12,14 +12,12 @@ const esUrlImagen = (icono: string) => /^https?:\/\//.test(icono);
 
 export function SeccionCategorias({ titulo }: { titulo: string }) {
   const { data: categorias, isLoading } = useCategoriasQuery();
-  const setCategoria = useFiltrosCatalogoStore((s) => s.setCategoria);
   const navigate = useNavigate();
 
   if (isLoading || !categorias || categorias.length === 0) return null;
 
   const ir = (idCategoria: number) => {
-    setCategoria(idCategoria);
-    navigate("/catalogo");
+    navigate(`/catalogo${urlFiltros({ categorias: [idCategoria] })}`);
   };
 
   return (

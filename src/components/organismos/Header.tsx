@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { FiSearch } from "react-icons/fi";
 import { useCantidadCarrito } from "../../store/CarritoStore";
 import { useAuthStore, nombreVisible } from "../../store/AuthStore";
-import { useFiltrosCatalogoStore } from "../../store/FiltrosCatalogoStore";
+import { urlFiltros } from "../../hooks/useFiltrosUrl";
 import { useFuncionesGiro } from "../../tanstack/LicenciaStack";
 import { useDiseno } from "../../tanstack/DisenoStack";
 import { CerrarSesion } from "../../supabaseCrud/crudAuth";
@@ -16,7 +16,6 @@ export function Header() {
   const cantidad = useCantidadCarrito();
   const user = useAuthStore((s) => s.user);
   const cargando = useAuthStore((s) => s.cargando);
-  const setBuscador = useFiltrosCatalogoStore((s) => s.setBuscador);
   const navigate = useNavigate();
   const [menuAbierto, setMenuAbierto] = useState(false);
   const conPiezas = useFuncionesGiro().tiene("piezas");
@@ -26,8 +25,7 @@ export function Header() {
 
   const buscar = (e: FormEvent) => {
     e.preventDefault();
-    setBuscador(busqueda.trim() || null);
-    navigate("/catalogo");
+    navigate(`/catalogo${urlFiltros({ buscador: busqueda.trim() || null })}`);
   };
 
   const salir = async () => {

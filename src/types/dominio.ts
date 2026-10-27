@@ -10,16 +10,6 @@ export interface CategoriaCatalogo {
   color: string | null;
 }
 
-export interface EtiquetaCatalogo {
-  id: number;
-  nombre: string;
-}
-
-export interface MarcaCatalogo {
-  id: number;
-  nombre: string;
-}
-
 export interface ProductoCatalogo {
   id: number;
   nombre: string;
@@ -39,6 +29,10 @@ export interface ProductoCatalogo {
   marca: string | null;
   /** Etiquetas/tags del producto (nombres, ya ordenados). */
   etiquetas: string[];
+  /** Dado de alta hace 30 días o menos (solo lo trae el catálogo). */
+  esNuevo?: boolean;
+  /** Entre los 5 más vendidos de los últimos 90 días (solo el catálogo). */
+  masVendido?: boolean;
 }
 
 /** Banner del hero del home (admin: proyecto-joyeria → Productos → Banners). */
@@ -120,6 +114,57 @@ export interface FiltrosCatalogo {
   soloDisponibles: boolean;
   pagina: number;
   tamPagina: number;
+}
+
+// ----------------------------------------------------------------------------
+// Catálogo con orden, filtros de varias opciones y conteos (RPC
+// ecommerce_catalogo). Los filtros viven en la URL (?cat=1,2&orden=...).
+// ----------------------------------------------------------------------------
+
+export type OrdenCatalogo =
+  | "destacados"
+  | "nuevos"
+  | "precio_asc"
+  | "precio_desc"
+  | "vendidos";
+
+export interface FiltrosTienda {
+  categorias: number[];
+  marcas: number[];
+  etiquetas: number[];
+  materiales: string[];
+  buscador: string | null;
+  talla: string | null;
+  precioMin: number | null;
+  precioMax: number | null;
+  pesoMin: number | null;
+  pesoMax: number | null;
+  soloDisponibles: boolean;
+  enOferta: boolean;
+  orden: OrdenCatalogo;
+  pagina: number;
+}
+
+/** Una opción de un filtro con cuántos productos quedarían al elegirla. */
+export interface OpcionFaceta<T = number> {
+  id: T;
+  nombre: string;
+  n: number;
+}
+
+export interface FacetasCatalogo {
+  categorias: OpcionFaceta[];
+  marcas: OpcionFaceta[];
+  etiquetas: OpcionFaceta[];
+  materiales: OpcionFaceta<string>[];
+  enOferta: number;
+  precio: { min: number | null; max: number | null };
+}
+
+export interface ResultadoCatalogo {
+  items: ProductoCatalogo[];
+  total: number;
+  facetas: FacetasCatalogo;
 }
 
 export interface PaginaProductos {
