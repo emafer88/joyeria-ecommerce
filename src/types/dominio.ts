@@ -152,6 +152,13 @@ export interface OpcionFaceta<T = number> {
   id: T;
   nombre: string;
   n: number;
+  /** Se muestra con sangría debajo de su padre (subcategoría). */
+  hija?: boolean;
+}
+
+/** Categoría del catálogo; idPadre != null si es subcategoría. */
+export interface FacetaCategoria extends OpcionFaceta {
+  idPadre: number | null;
 }
 
 /** Atributo del negocio (Género, Piedra...) con sus valores como opciones. */
@@ -168,7 +175,7 @@ export interface AtributoProducto {
 }
 
 export interface FacetasCatalogo {
-  categorias: OpcionFaceta[];
+  categorias: FacetaCategoria[];
   marcas: OpcionFaceta[];
   etiquetas: OpcionFaceta[];
   materiales: OpcionFaceta<string>[];

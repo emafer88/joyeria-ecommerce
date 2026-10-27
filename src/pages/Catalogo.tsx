@@ -114,8 +114,20 @@ export function Catalogo() {
   const totalPaginas = Math.max(1, Math.ceil(total / TAM_PAGINA_CATALOGO));
   const activos = filtrosActivos(filtros, data?.facetas);
   const nFiltros = contarFiltros(filtros);
-  const categorias = (data?.facetas.categorias ?? []).filter(
-    (c) => c.n > 0 || filtros.categorias.includes(c.id)
+  const todasCategorias = data?.facetas.categorias ?? [];
+  const visible = (c: { id: number; n: number }) =>
+    c.n > 0 || filtros.categorias.includes(c.id);
+  const categorias = todasCategorias.filter((c) => c.idPadre === null && visible(c));
+  // Con una sola categoría elegida, su padre (o ella misma si es padre)
+  // muestra una segunda fila con sus subcategorías.
+  const elegida =
+    filtros.categorias.length === 1
+      ? todasCategorias.find((c) => c.id === filtros.categorias[0])
+      : undefined;
+  const idPadreActivo = elegida ? elegida.idPadre ?? elegida.id : null;
+  const padreActivo = todasCategorias.find((c) => c.id === idPadreActivo);
+  const subcategorias = todasCategorias.filter(
+    (c) => c.idPadre !== null && c.idPadre === idPadreActivo && visible(c)
   );
 
   const irPagina = (pagina: number) => {
@@ -179,11 +191,29 @@ export function Catalogo() {
             <button
               type="button"
               key={c.id}
-              className={
-                filtros.categorias.length === 1 && filtros.categorias[0] === c.id
-                  ? "on"
-                  : ""
-              }
+              className={idPadreActivo === c.id ? "on" : ""}
+              onClick={() => cambiar({ categorias: [c.id] })}
+            >
+              {c.nombre}
+            </button>
+          ))}
+        </nav>
+      )}
+
+      {padreActivo && subcategorias.length > 0 && (
+        <nav className="chips-categorias sub">
+          <button
+            type="button"
+            className={elegida?.id === padreActivo.id ? "on" : ""}
+            onClick={() => cambiar({ categorias: [padreActivo.id] })}
+          >
+            Todo en {padreActivo.nombre}
+          </button>
+          {subcategorias.map((c) => (
+            <button
+              type="button"
+              key={c.id}
+              className={elegida?.id === c.id ? "on" : ""}
               onClick={() => cambiar({ categorias: [c.id] })}
             >
               {c.nombre}
@@ -402,6 +432,19 @@ const Container = styled.div`
         border-color: ${v.colorPrincipal};
         color: var(--c-sobre-principal, #111);
         font-weight: 600;
+      }
+    }
+    /* Subcategorías: más chicas y con contorno en vez de relleno. */
+    &.sub {
+      margin-top: -4px;
+      button {
+        padding: 5px 13px;
+        font-size: 13px;
+        &.on {
+          background: rgba(var(--c-principal-rgb), 0.12);
+          color: ${v.colorTexto};
+          border-color: ${v.colorPrincipal};
+        }
       }
     }
   }
