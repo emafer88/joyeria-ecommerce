@@ -3,28 +3,24 @@
 // los hooks solo orquestan cache/fetch y llaman a `crudCatalogo.ts`.
 import { useQuery } from "@tanstack/react-query";
 import {
+  BuscarCatalogo,
   MostrarBanners,
   MostrarCategorias,
   MostrarCostoEnvio,
-  MostrarEtiquetas,
   MostrarImagenesProducto,
   MostrarImagenesVariante,
-  MostrarMarcas,
-  MostrarMateriales,
   MostrarPiezasDisponibles,
   MostrarProductoDetalle,
   MostrarProductos,
   MostrarVariantesDisponibles,
 } from "../supabaseCrud/crudCatalogo";
-import type { FiltrosCatalogo } from "../types/dominio";
+import type { FiltrosCatalogo, FiltrosTienda } from "../types/dominio";
 
 export const K_BANNERS = "ecommerce banners";
 export const K_CATEGORIAS = "ecommerce categorias";
-export const K_ETIQUETAS = "ecommerce etiquetas";
-export const K_MATERIALES = "ecommerce materiales";
-export const K_MARCAS = "ecommerce marcas";
 export const K_COSTO_ENVIO = "ecommerce costo envio";
 export const K_PRODUCTOS = "ecommerce productos";
+export const K_CATALOGO = "ecommerce catalogo";
 export const K_PRODUCTO_DETALLE = "ecommerce producto detalle";
 export const K_IMAGENES_PRODUCTO = "ecommerce imagenes producto";
 export const K_IMAGENES_VARIANTE = "ecommerce imagenes variante";
@@ -45,28 +41,6 @@ export const useCategoriasQuery = () =>
     staleTime: 5 * 60 * 1000,
   });
 
-export const useEtiquetasQuery = () =>
-  useQuery({
-    queryKey: [K_ETIQUETAS],
-    queryFn: MostrarEtiquetas,
-    staleTime: 5 * 60 * 1000,
-  });
-
-export const useMaterialesQuery = (habilitado = true) =>
-  useQuery({
-    queryKey: [K_MATERIALES],
-    queryFn: MostrarMateriales,
-    staleTime: 5 * 60 * 1000,
-    enabled: habilitado,
-  });
-
-export const useMarcasQuery = () =>
-  useQuery({
-    queryKey: [K_MARCAS],
-    queryFn: MostrarMarcas,
-    staleTime: 5 * 60 * 1000,
-  });
-
 export const useCostoEnvioQuery = () =>
   useQuery({
     queryKey: [K_COSTO_ENVIO],
@@ -78,6 +52,15 @@ export const useProductosQuery = (filtros: FiltrosCatalogo) =>
   useQuery({
     queryKey: [K_PRODUCTOS, filtros],
     queryFn: () => MostrarProductos(filtros),
+    placeholderData: (previa) => previa,
+  });
+
+// Catálogo con filtros, orden y conteos. Mientras llega la página nueva se
+// queda la anterior en pantalla (sin parpadeo al marcar un filtro).
+export const useCatalogoQuery = (filtros: FiltrosTienda) =>
+  useQuery({
+    queryKey: [K_CATALOGO, filtros],
+    queryFn: () => BuscarCatalogo(filtros),
     placeholderData: (previa) => previa,
   });
 

@@ -5,14 +5,15 @@ import { supabase } from "./supabase.config";
 import type {
   Banner,
   CategoriaCatalogo,
-  EtiquetaCatalogo,
   FiltrosCatalogo,
+  FiltrosTienda,
   ImagenProducto,
-  MarcaCatalogo,
+  OpcionFaceta,
   PaginaProductos,
   PiezaDisponible,
   ProductoCatalogo,
   ProductoDetalle,
+  ResultadoCatalogo,
   VarianteDisponible,
 } from "../types/dominio";
 
@@ -25,24 +26,6 @@ export async function MostrarCategorias(): Promise<CategoriaCatalogo[]> {
     icono: c.icono,
     color: c.color,
   }));
-}
-
-export async function MostrarEtiquetas(): Promise<EtiquetaCatalogo[]> {
-  const { data, error } = await supabase.rpc("ecommerce_listar_etiquetas");
-  if (error) throw new Error(error.message);
-  return (data ?? []).map((e) => ({ id: e.id, nombre: e.nombre }));
-}
-
-export async function MostrarMateriales(): Promise<string[]> {
-  const { data, error } = await supabase.rpc("ecommerce_listar_materiales");
-  if (error) throw new Error(error.message);
-  return (data ?? []).map((m) => m.material);
-}
-
-export async function MostrarMarcas(): Promise<MarcaCatalogo[]> {
-  const { data, error } = await supabase.rpc("ecommerce_listar_marcas");
-  if (error) throw new Error(error.message);
-  return (data ?? []).map((m) => ({ id: m.id, nombre: m.nombre }));
 }
 
 export async function MostrarCostoEnvio(): Promise<number> {
@@ -95,6 +78,98 @@ export async function MostrarProductos(
   }));
 
   return { items, totalCount: filas[0]?.total_count ?? 0 };
+}
+
+// Fila de producto tal como la devuelven ecommerce_catalogo (jsonb).
+interface FilaCatalogo {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+  precio_venta: number;
+  id_categoria: number;
+  categoria: string;
+  es_joyeria: boolean;
+  imagen_portada: string | null;
+  total_disponible: number | null;
+  destacado: boolean;
+  precio_oferta: number | null;
+  marca: string | null;
+  etiquetas: string[] | null;
+  es_nuevo: boolean;
+  mas_vendido: boolean;
+}
+
+interface RespuestaCatalogo {
+  total: number;
+  items: FilaCatalogo[];
+  facetas: {
+    categorias: OpcionFaceta[];
+    marcas: OpcionFaceta[];
+    etiquetas: OpcionFaceta[];
+    materiales: { valor: string; nombre: string; n: number }[];
+    en_oferta: number;
+    precio: { min: number | null; max: number | null };
+  };
+}
+
+export const TAM_PAGINA_CATALOGO = 24;
+
+export async function BuscarCatalogo(
+  filtros: FiltrosTienda
+): Promise<ResultadoCatalogo> {
+  const { data, error } = await supabase.rpc("ecommerce_catalogo", {
+    _f: {
+      categorias: filtros.categorias,
+      marcas: filtros.marcas,
+      etiquetas: filtros.etiquetas,
+      materiales: filtros.materiales,
+      buscador: filtros.buscador,
+      talla: filtros.talla,
+      precio_min: filtros.precioMin,
+      precio_max: filtros.precioMax,
+      peso_min: filtros.pesoMin,
+      peso_max: filtros.pesoMax,
+      solo_disponibles: filtros.soloDisponibles,
+      en_oferta: filtros.enOferta,
+      orden: filtros.orden,
+      pagina: filtros.pagina,
+      tam_pagina: TAM_PAGINA_CATALOGO,
+    },
+  });
+  if (error) throw new Error(error.message);
+  const r = data as unknown as RespuestaCatalogo;
+  return {
+    total: r.total,
+    items: r.items.map((p) => ({
+      id: p.id,
+      nombre: p.nombre,
+      descripcion: p.descripcion,
+      precioVenta: p.precio_venta,
+      idCategoria: p.id_categoria,
+      categoria: p.categoria,
+      esJoyeria: p.es_joyeria,
+      imagenPortada: p.imagen_portada,
+      totalDisponible: p.total_disponible,
+      destacado: p.destacado,
+      precioOferta: p.precio_oferta,
+      marca: p.marca,
+      etiquetas: p.etiquetas ?? [],
+      esNuevo: p.es_nuevo,
+      masVendido: p.mas_vendido,
+    })),
+    facetas: {
+      categorias: r.facetas.categorias,
+      marcas: r.facetas.marcas,
+      etiquetas: r.facetas.etiquetas,
+      materiales: r.facetas.materiales.map((m) => ({
+        id: m.valor,
+        nombre: m.nombre,
+        n: m.n,
+      })),
+      enOferta: r.facetas.en_oferta,
+      precio: r.facetas.precio,
+    },
+  };
 }
 
 export async function MostrarBanners(): Promise<Banner[]> {

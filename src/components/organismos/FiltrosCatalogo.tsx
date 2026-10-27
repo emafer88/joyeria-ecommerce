@@ -1,35 +1,154 @@
+import { useEffect, useState, type ReactNode } from "react";
 import styled from "styled-components";
-import {
-  useCategoriasQuery,
-  useEtiquetasQuery,
-  useMarcasQuery,
-  useMaterialesQuery,
-} from "../../tanstack/CatalogoStack";
-import { useFiltrosCatalogoStore } from "../../store/FiltrosCatalogoStore";
+import type { FacetasCatalogo, OpcionFaceta } from "../../types/dominio";
+import type { useFiltrosUrl } from "../../hooks/useFiltrosUrl";
 import { useFuncionesGiro } from "../../tanstack/LicenciaStack";
+import { rangosPrecio } from "../../utils/rangosPrecio";
 import { v } from "../../styles/variables";
 
-export function FiltrosCatalogo() {
+type Control = ReturnType<typeof useFiltrosUrl>;
+
+interface Props extends Control {
+  facetas: FacetasCatalogo | undefined;
+}
+
+// Texto que se edita localmente pero se reinicia si el valor de la URL cambia
+// por fuera (un chip quitado, "Limpiar todo", el buscador del encabezado).
+function useTextoDe(externo: string): [string, (v: string) => void] {
+  const [texto, setTexto] = useState(externo);
+  const [previo, setPrevio] = useState(externo);
+  if (externo !== previo) {
+    setPrevio(externo);
+    setTexto(externo);
+  }
+  return [texto, setTexto];
+}
+
+// Sección plegable del panel; las que tienen algo elegido arrancan abiertas.
+function Seccion({
+  titulo,
+  abierta = true,
+  children,
+}: {
+  titulo: string;
+  abierta?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <details className="seccion" open={abierta}>
+      <summary>{titulo}</summary>
+      <div className="contenido">{children}</div>
+    </details>
+  );
+}
+
+// Lista de casillas con el número de productos de cada opción. Las que
+// darían 0 se ven apagadas (salvo que ya estén marcadas).
+function Opciones<T extends number | string>({
+  opciones,
+  elegidas,
+  onAlternar,
+}: {
+  opciones: OpcionFaceta<T>[];
+  elegidas: T[];
+  onAlternar: (valor: T) => void;
+}) {
+  const [todas, setTodas] = useState(false);
+  const VISIBLES = 6;
+  const lista = todas ? opciones : opciones.slice(0, VISIBLES);
+  return (
+    <>
+      {lista.map((o) => {
+        const marcada = elegidas.includes(o.id);
+        return (
+          <label
+            key={o.id}
+            className={`opcion ${o.n === 0 && !marcada ? "vacia" : ""}`}
+          >
+            <input
+              type="checkbox"
+              checked={marcada}
+              onChange={() => onAlternar(o.id)}
+            />
+            <span className="nombre">{o.nombre}</span>
+            <span className="n">{o.n}</span>
+          </label>
+        );
+      })}
+      {opciones.length > VISIBLES && (
+        <button type="button" className="mas" onClick={() => setTodas(!todas)}>
+          {todas ? "− Menos" : `+ Más (${opciones.length - VISIBLES})`}
+        </button>
+      )}
+    </>
+  );
+}
+
+// Dos números (mínimo y máximo) que se aplican al salir del campo o con Enter.
+function RangoLibre({
+  min,
+  max,
+  onAplicar,
+}: {
+  min: number | null;
+  max: number | null;
+  onAplicar: (min: number | null, max: number | null) => void;
+}) {
+  const [a, setA] = useTextoDe(min?.toString() ?? "");
+  const [b, setB] = useTextoDe(max?.toString() ?? "");
+  const aplicar = () => {
+    const nMin = a === "" ? null : Number(a);
+    const nMax = b === "" ? null : Number(b);
+    if (nMin !== min || nMax !== max) onAplicar(nMin, nMax);
+  };
+  const enter = (e: React.KeyboardEvent) => e.key === "Enter" && aplicar();
+  return (
+    <div className="rango">
+      <input
+        type="number"
+        min="0"
+        placeholder="Mín"
+        value={a}
+        onChange={(e) => setA(e.target.value)}
+        onBlur={aplicar}
+        onKeyDown={enter}
+      />
+      <span>-</span>
+      <input
+        type="number"
+        min="0"
+        placeholder="Máx"
+        value={b}
+        onChange={(e) => setB(e.target.value)}
+        onBlur={aplicar}
+        onKeyDown={enter}
+      />
+    </div>
+  );
+}
+
+export function FiltrosCatalogo({ facetas, filtros, cambiar, alternar }: Props) {
   // Material y peso son de las piezas de joyería; talla, de los giros con tallas.
   const { tiene } = useFuncionesGiro();
   const conPiezas = tiene("piezas");
-  const { data: categorias, isLoading } = useCategoriasQuery();
-  const { data: etiquetas } = useEtiquetasQuery();
-  const { data: materiales } = useMaterialesQuery(conPiezas);
-  const { data: marcas } = useMarcasQuery();
-  const {
-    filtros,
-    setCategoria,
-    setMaterial,
-    setEtiqueta,
-    setBuscador,
-    setRangoPrecio,
-    setMarca,
-    setRangoPeso,
-    setTalla,
-    setSoloDisponibles,
-    limpiarFiltros,
-  } = useFiltrosCatalogoStore();
+  const conTallas = tiene("tallas") || conPiezas;
+  const [busqueda, setBusqueda] = useTextoDe(filtros.buscador ?? "");
+  const [talla, setTalla] = useTextoDe(filtros.talla ?? "");
+
+  // Escribir en el buscador filtra solo, medio segundo después de la última tecla.
+  useEffect(() => {
+    const texto = busqueda.trim() || null;
+    if (texto === filtros.buscador) return;
+    const t = setTimeout(() => cambiar({ buscador: texto }, true), 500);
+    return () => clearTimeout(t);
+  }, [busqueda]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const rangos = rangosPrecio(
+    facetas?.precio.min ?? null,
+    facetas?.precio.max ?? null
+  );
+  const rangoElegido = (min: number | null, max: number | null) =>
+    filtros.precioMin === min && filtros.precioMax === max;
 
   return (
     <Container>
@@ -37,188 +156,129 @@ export function FiltrosCatalogo() {
         <label htmlFor="buscador">Buscar</label>
         <input
           id="buscador"
-          type="text"
+          type="search"
           placeholder="Nombre del producto..."
-          defaultValue={filtros.buscador ?? ""}
-          onChange={(e) => setBuscador(e.target.value || null)}
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
         />
       </div>
 
-      <div className="campo">
-        <label htmlFor="categoria">Categoría</label>
-        <select
-          id="categoria"
-          value={filtros.idCategoria ?? ""}
-          onChange={(e) =>
-            setCategoria(e.target.value ? Number(e.target.value) : null)
-          }
-          disabled={isLoading}
+      {facetas && facetas.categorias.length > 1 && (
+        <Seccion titulo="Categoría">
+          <Opciones
+            opciones={facetas.categorias}
+            elegidas={filtros.categorias}
+            onAlternar={(id) => alternar("categorias", id)}
+          />
+        </Seccion>
+      )}
+
+      <Seccion titulo="Precio">
+        {rangos.map((r) => (
+          <label key={r.texto} className="opcion">
+            <input
+              type="radio"
+              name="rango-precio"
+              checked={rangoElegido(r.min, r.max)}
+              onChange={() => cambiar({ precioMin: r.min, precioMax: r.max })}
+            />
+            <span className="nombre">{r.texto}</span>
+          </label>
+        ))}
+        <RangoLibre
+          min={filtros.precioMin}
+          max={filtros.precioMax}
+          onAplicar={(precioMin, precioMax) => cambiar({ precioMin, precioMax })}
+        />
+      </Seccion>
+
+      {facetas && (facetas.enOferta > 0 || filtros.enOferta) && (
+        <label className="opcion opcion--suelta">
+          <input
+            type="checkbox"
+            checked={filtros.enOferta}
+            onChange={(e) => cambiar({ enOferta: e.target.checked })}
+          />
+          <span className="nombre">En oferta</span>
+          <span className="n">{facetas.enOferta}</span>
+        </label>
+      )}
+
+      {conPiezas && facetas && facetas.materiales.length > 0 && (
+        <Seccion titulo="Material">
+          <Opciones
+            opciones={facetas.materiales}
+            elegidas={filtros.materiales}
+            onAlternar={(valor) => alternar("materiales", valor)}
+          />
+        </Seccion>
+      )}
+
+      {facetas && facetas.marcas.length > 0 && (
+        <Seccion titulo="Colección" abierta={filtros.marcas.length > 0}>
+          <Opciones
+            opciones={facetas.marcas}
+            elegidas={filtros.marcas}
+            onAlternar={(id) => alternar("marcas", id)}
+          />
+        </Seccion>
+      )}
+
+      {facetas && facetas.etiquetas.length > 0 && (
+        <Seccion titulo="Etiquetas" abierta={filtros.etiquetas.length > 0}>
+          <Opciones
+            opciones={facetas.etiquetas}
+            elegidas={filtros.etiquetas}
+            onAlternar={(id) => alternar("etiquetas", id)}
+          />
+        </Seccion>
+      )}
+
+      {conPiezas && (
+        <Seccion
+          titulo="Peso (g)"
+          abierta={filtros.pesoMin !== null || filtros.pesoMax !== null}
         >
-          <option value="">Todas</option>
-          {categorias?.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nombre}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {conPiezas && (
-        <div className="campo">
-          <label htmlFor="material">Material</label>
-          <select
-            id="material"
-            value={filtros.material ?? ""}
-            onChange={(e) => setMaterial(e.target.value || null)}
-          >
-            <option value="">Todos</option>
-            {materiales?.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {marcas && marcas.length > 0 && (
-        <div className="campo">
-          <label htmlFor="marca">Colección</label>
-          <select
-            id="marca"
-            value={filtros.idMarca ?? ""}
-            onChange={(e) =>
-              setMarca(e.target.value ? Number(e.target.value) : null)
-            }
-          >
-            <option value="">Todas</option>
-            {marcas.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {etiquetas && etiquetas.length > 0 && (
-        <div className="campo">
-          <label htmlFor="etiqueta">Etiqueta</label>
-          <select
-            id="etiqueta"
-            value={filtros.idEtiqueta ?? ""}
-            onChange={(e) =>
-              setEtiqueta(e.target.value ? Number(e.target.value) : null)
-            }
-          >
-            <option value="">Todas</option>
-            {etiquetas.map((et) => (
-              <option key={et.id} value={et.id}>
-                {et.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      <div className="campo campo--rango">
-        <label>Precio</label>
-        <div className="rango">
-          <input
-            type="number"
-            placeholder="Min"
-            defaultValue={filtros.precioMin ?? ""}
-            onChange={(e) =>
-              setRangoPrecio(
-                e.target.value ? Number(e.target.value) : null,
-                filtros.precioMax
-              )
-            }
+          <RangoLibre
+            min={filtros.pesoMin}
+            max={filtros.pesoMax}
+            onAplicar={(pesoMin, pesoMax) => cambiar({ pesoMin, pesoMax })}
           />
-          <span>-</span>
-          <input
-            type="number"
-            placeholder="Max"
-            defaultValue={filtros.precioMax ?? ""}
-            onChange={(e) =>
-              setRangoPrecio(
-                filtros.precioMin,
-                e.target.value ? Number(e.target.value) : null
-              )
-            }
-          />
-        </div>
-      </div>
-
-      {conPiezas && (
-        <div className="campo campo--rango">
-          <label>Peso (g)</label>
-          <div className="rango">
-            <input
-              type="number"
-              placeholder="Min"
-              defaultValue={filtros.pesoMin ?? ""}
-              onChange={(e) =>
-                setRangoPeso(
-                  e.target.value ? Number(e.target.value) : null,
-                  filtros.pesoMax
-                )
-              }
-            />
-            <span>-</span>
-            <input
-              type="number"
-              placeholder="Max"
-              defaultValue={filtros.pesoMax ?? ""}
-              onChange={(e) =>
-                setRangoPeso(
-                  filtros.pesoMin,
-                  e.target.value ? Number(e.target.value) : null
-                )
-              }
-            />
-          </div>
-        </div>
+        </Seccion>
       )}
 
-      {(tiene("tallas") || conPiezas) && (
-        <div className="campo">
-          <label htmlFor="talla">Talla</label>
+      {conTallas && (
+        <Seccion titulo="Talla" abierta={filtros.talla !== null}>
           <input
-            id="talla"
+            className="texto"
             type="text"
             placeholder="Ej. 7, M..."
-            defaultValue={filtros.talla ?? ""}
-            onChange={(e) => setTalla(e.target.value || null)}
+            value={talla}
+            onChange={(e) => setTalla(e.target.value)}
+            onBlur={() => cambiar({ talla: talla.trim() || null })}
+            onKeyDown={(e) =>
+              e.key === "Enter" && cambiar({ talla: talla.trim() || null })
+            }
           />
-        </div>
+        </Seccion>
       )}
 
-      <label className="campo--check">
+      <label className="opcion opcion--suelta">
         <input
           type="checkbox"
           checked={filtros.soloDisponibles}
-          onChange={(e) => setSoloDisponibles(e.target.checked)}
+          onChange={(e) => cambiar({ soloDisponibles: e.target.checked })}
         />
-        Solo disponibles
+        <span className="nombre">Solo disponibles</span>
       </label>
-
-      <button type="button" className="limpiar" onClick={limpiarFiltros}>
-        Limpiar filtros
-      </button>
     </Container>
   );
 }
 
-const Container = styled.aside`
+const Container = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 20px;
-  background: ${v.bgTarjeta};
-  border: 1px solid ${v.borderSutil};
-  border-radius: ${v.borderRadius};
-  height: fit-content;
+  gap: 14px;
 
   .campo {
     display: flex;
@@ -229,27 +289,96 @@ const Container = styled.aside`
       font-weight: 600;
       color: ${v.colorTextoSuave};
     }
-    input,
-    select {
-      padding: 9px 11px;
-      border-radius: 8px;
-      border: 1px solid ${v.borderSutil};
-      background: rgba(var(--c-capa-rgb), 0.03);
-      color: ${v.colorTexto};
+  }
+
+  input[type="search"],
+  input[type="number"],
+  input.texto {
+    padding: 9px 11px;
+    border-radius: 8px;
+    border: 1px solid ${v.borderSutil};
+    background: rgba(var(--c-capa-rgb), 0.03);
+    color: ${v.colorTexto};
+    font-size: 14px;
+    font-family: inherit;
+    width: 100%;
+    &::placeholder {
+      color: ${v.colorTextoSuave2};
+    }
+    &:focus {
+      outline: none;
+      border-color: ${v.borderDorado};
+    }
+  }
+
+  .seccion {
+    border-top: 1px solid ${v.borderSutil};
+    padding-top: 12px;
+    summary {
+      cursor: pointer;
       font-size: 14px;
-      font-family: inherit;
-      &::placeholder {
+      font-weight: 700;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      &::-webkit-details-marker {
+        display: none;
+      }
+      &::after {
+        content: "+";
         color: ${v.colorTextoSuave2};
-      }
-      &:focus {
-        outline: none;
-        border-color: ${v.borderDorado};
+        font-weight: 400;
       }
     }
-    select option {
-      background: var(--c-panel);
-      color: ${v.colorTexto};
+    &[open] summary::after {
+      content: "−";
     }
+    .contenido {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+  }
+
+  .opcion {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 14px;
+    cursor: pointer;
+    color: ${v.colorTexto};
+    input {
+      accent-color: ${v.colorPrincipal};
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+    .nombre {
+      flex: 1;
+    }
+    .n {
+      font-size: 12px;
+      color: ${v.colorTextoSuave2};
+    }
+    &.vacia {
+      opacity: 0.4;
+    }
+  }
+  .opcion--suelta {
+    border-top: 1px solid ${v.borderSutil};
+    padding-top: 12px;
+    font-weight: 600;
+  }
+
+  .mas {
+    align-self: flex-start;
+    background: none;
+    border: none;
+    padding: 0;
+    color: ${v.colorPrincipal};
+    font-size: 13px;
+    cursor: pointer;
   }
 
   .rango {
@@ -257,35 +386,5 @@ const Container = styled.aside`
     align-items: center;
     gap: 8px;
     color: ${v.colorTextoSuave2};
-    input {
-      width: 100%;
-    }
-  }
-
-  .campo--check {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: ${v.colorTextoSuave};
-    cursor: pointer;
-    input {
-      accent-color: ${v.colorPrincipal};
-    }
-  }
-
-  .limpiar {
-    padding: 9px;
-    border-radius: 8px;
-    border: 1px solid ${v.borderSutil};
-    background: transparent;
-    color: ${v.colorTextoSuave};
-    cursor: pointer;
-    font-size: 13px;
-    transition: 0.2s;
-    &:hover {
-      border-color: ${v.borderDorado};
-      color: ${v.colorPrincipal};
-    }
   }
 `;

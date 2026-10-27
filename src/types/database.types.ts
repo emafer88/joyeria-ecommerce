@@ -3213,6 +3213,7 @@ export type Database = {
           material: string
         }[]
       }
+      ecommerce_catalogo: { Args: { _f?: Json }; Returns: Json }
       ecommerce_listar_productos: {
         Args: {
           _buscador?: string

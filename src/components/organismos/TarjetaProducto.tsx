@@ -35,6 +35,11 @@ export function TarjetaProducto({ producto }: Props) {
         )}
       </div>
       <div className="info">
+        {(producto.masVendido || producto.esNuevo) && (
+          <span className="destacada">
+            {producto.masVendido ? "Más vendido" : "Nuevo"}
+          </span>
+        )}
         <span className="categoria">
           {producto.categoria}
           {producto.marca ? ` · ${producto.marca}` : ""}
@@ -144,6 +149,12 @@ const Container = styled(Link)`
     display: flex;
     flex-direction: column;
     gap: 4px;
+  }
+
+  .destacada {
+    font-size: 12px;
+    font-weight: 700;
+    color: ${v.colorPrincipal};
   }
 
   .categoria {
