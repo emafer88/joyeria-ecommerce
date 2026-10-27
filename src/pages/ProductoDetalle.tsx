@@ -6,6 +6,7 @@ import {
   useImagenesProductoQuery,
   useImagenesVarianteQuery,
   usePiezasDisponiblesQuery,
+  useAtributosProductoQuery,
   useProductoDetalleQuery,
   useVariantesDisponiblesQuery,
 } from "../tanstack/CatalogoStack";
@@ -39,6 +40,7 @@ export function ProductoDetalle() {
 
   const { data: producto, isLoading, isError } =
     useProductoDetalleQuery(idProducto);
+  const { data: atributos = [] } = useAtributosProductoQuery(idProducto);
   const { data: imagenes } = useImagenesProductoQuery(idProducto);
   const { data: imagenesVariante } =
     useImagenesVarianteQuery(idVarianteElegida);
@@ -177,8 +179,14 @@ export function ProductoDetalle() {
           )}
           {producto.descripcion && <p>{producto.descripcion}</p>}
 
-          {(producto.medidas || producto.tallas) && (
+          {(producto.medidas || producto.tallas || atributos.length > 0) && (
             <dl className="ficha">
+              {atributos.map((a) => (
+                <div key={a.atributo}>
+                  <dt>{a.atributo}</dt>
+                  <dd>{a.valores.join(", ")}</dd>
+                </div>
+              ))}
               {producto.medidas && (
                 <div>
                   <dt>Medidas</dt>

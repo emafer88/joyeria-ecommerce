@@ -4,6 +4,7 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   BuscarCatalogo,
+  MostrarAtributosProducto,
   MostrarBanners,
   MostrarCategorias,
   MostrarCostoEnvio,
@@ -62,6 +63,13 @@ export const useCatalogoQuery = (filtros: FiltrosTienda) =>
     queryKey: [K_CATALOGO, filtros],
     queryFn: () => BuscarCatalogo(filtros),
     placeholderData: (previa) => previa,
+  });
+
+export const useAtributosProductoQuery = (idProducto: number | undefined) =>
+  useQuery({
+    queryKey: [K_PRODUCTO_DETALLE, "atributos", idProducto],
+    queryFn: () => MostrarAtributosProducto(idProducto as number),
+    enabled: idProducto !== undefined,
   });
 
 export const useProductoDetalleQuery = (idProducto: number | undefined) =>

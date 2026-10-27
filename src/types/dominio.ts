@@ -133,6 +133,8 @@ export interface FiltrosTienda {
   marcas: number[];
   etiquetas: number[];
   materiales: string[];
+  /** id de atributo → ids de valor elegidos (Género: Mujer, Unisex). */
+  atributos: Record<string, number[]>;
   buscador: string | null;
   talla: string | null;
   precioMin: number | null;
@@ -152,11 +154,25 @@ export interface OpcionFaceta<T = number> {
   n: number;
 }
 
+/** Atributo del negocio (Género, Piedra...) con sus valores como opciones. */
+export interface FacetaAtributo {
+  id: number;
+  nombre: string;
+  valores: OpcionFaceta[];
+}
+
+/** Atributos de un producto para su ficha ("Género": ["Mujer"]). */
+export interface AtributoProducto {
+  atributo: string;
+  valores: string[];
+}
+
 export interface FacetasCatalogo {
   categorias: OpcionFaceta[];
   marcas: OpcionFaceta[];
   etiquetas: OpcionFaceta[];
   materiales: OpcionFaceta<string>[];
+  atributos: FacetaAtributo[];
   enOferta: number;
   precio: { min: number | null; max: number | null };
 }

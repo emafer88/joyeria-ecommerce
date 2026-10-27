@@ -3214,6 +3214,10 @@ export type Database = {
         }[]
       }
       ecommerce_catalogo: { Args: { _f?: Json }; Returns: Json }
+      ecommerce_producto_atributos: {
+        Args: { _id_producto: number }
+        Returns: { atributo: string; valores: string[] }[]
+      }
       ecommerce_listar_productos: {
         Args: {
           _buscador?: string
