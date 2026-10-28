@@ -7,7 +7,7 @@ import { useAuthStore, nombreVisible } from "../store/AuthStore";
 import { useCrearPreferenciaMutation } from "../tanstack/CheckoutStack";
 import { useCostoEnvioQuery } from "../tanstack/CatalogoStack";
 import { SelectorDireccion } from "../components/organismos/SelectorDireccion";
-import { claveCarritoItem } from "../types/dominio";
+import { claveCarritoItem, textoCombinacion } from "../types/dominio";
 import type { EnvioCheckout } from "../supabaseCrud/crudCheckout";
 import { v } from "../styles/variables";
 
@@ -77,6 +77,9 @@ export function Checkout() {
           <li key={claveCarritoItem(item)}>
             <span>
               {item.nombre}
+              {item.tipo === "stock" && textoCombinacion(item)
+                ? ` (${textoCombinacion(item)})`
+                : ""}
               {item.tipo === "stock" ? ` x${item.cantidad}` : " (pieza única)"}
             </span>
             <span>

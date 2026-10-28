@@ -45,6 +45,7 @@ export function leerFiltros(p: URLSearchParams): FiltrosTienda {
     atributos: leerAtributos(p),
     buscador: p.get("q") || null,
     talla: p.get("talla") || null,
+    colores: textos(p.get("col")),
     precioMin: numero(p.get("pmin")),
     precioMax: numero(p.get("pmax")),
     pesoMin: numero(p.get("gmin")),
@@ -74,6 +75,7 @@ export function urlFiltros(f: Partial<FiltrosTienda>): string {
   );
   valor("q", f.buscador);
   valor("talla", f.talla);
+  lista("col", f.colores);
   valor("pmin", f.precioMin);
   valor("pmax", f.precioMax);
   valor("gmin", f.pesoMin);
@@ -97,6 +99,7 @@ export function contarFiltros(f: FiltrosTienda): number {
     (f.precioMin !== null || f.precioMax !== null ? 1 : 0) +
     (f.pesoMin !== null || f.pesoMax !== null ? 1 : 0) +
     (f.talla ? 1 : 0) +
+    f.colores.length +
     (f.soloDisponibles ? 1 : 0) +
     (f.enOferta ? 1 : 0)
   );
@@ -113,7 +116,9 @@ export function useFiltrosUrl() {
   };
 
   // Marca o desmarca una opción de un filtro de varias opciones.
-  const alternar = <K extends "categorias" | "marcas" | "etiquetas" | "materiales">(
+  const alternar = <
+    K extends "categorias" | "marcas" | "etiquetas" | "materiales" | "colores",
+  >(
     clave: K,
     valor: FiltrosTienda[K][number]
   ) => {

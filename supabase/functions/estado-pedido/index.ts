@@ -31,7 +31,9 @@ Deno.serve(async (req) => {
 
   const { data: detalle } = await supabaseAdmin
     .from("detalle_venta")
-    .select("cantidad, precio_venta, total, descripcion, id_producto, id_pieza, productos(nombre)")
+    .select(
+      "cantidad, precio_venta, total, descripcion, id_producto, id_pieza, id_combinacion, productos(nombre), producto_combinaciones(talla, color)"
+    )
     .eq("id_venta", venta.id);
 
   const { data: envio } = await supabaseAdmin
@@ -56,6 +58,11 @@ Deno.serve(async (req) => {
       total: d.total,
       idProducto: d.id_producto,
       idPieza: d.id_pieza,
+      idCombinacion: d.id_combinacion,
+      // @ts-ignore -- select anidado de supabase-js
+      talla: d.producto_combinaciones?.talla || null,
+      // @ts-ignore -- select anidado de supabase-js
+      color: d.producto_combinaciones?.color || null,
     })),
     envio: envio
       ? {

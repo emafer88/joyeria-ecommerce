@@ -19,6 +19,8 @@ interface ItemPiezaRequest {
 interface ItemStockRequest {
   tipo: "stock";
   idProducto: number;
+  /** Talla/color (ropa y calzado); obligatoria si el producto las tiene. */
+  idCombinacion?: number | null;
   cantidad: number;
 }
 type ItemRequest = ItemPiezaRequest | ItemStockRequest;
@@ -30,6 +32,10 @@ interface LineaValidada {
   precioVenta: number;
   precioCompra: number | null;
   idPieza?: number;
+  idCombinacion?: number;
+  /** "Playera · M · Negro": lo que ve el cliente en Mercado Pago y queda en
+   *  la venta. */
+  descripcion?: string;
 }
 
 // Dirección de envío: o el id de una guardada del usuario, o los campos
@@ -238,6 +244,9 @@ Deno.serve(async (req) => {
   // --- 1) Revalidar cada línea contra la base real (nunca el precio del cliente) ---
   const lineas: LineaValidada[] = [];
   const fallidas: string[] = [];
+  // Piezas pedidas por talla/color, para validar existencia aunque la misma
+  // venga en dos líneas.
+  const pedidasPorCombinacion = new Map<number, number>();
 
   for (const item of items) {
     if (item.tipo === "pieza") {
@@ -287,12 +296,51 @@ Deno.serve(async (req) => {
         fallidas.push(`producto:${item.idProducto}`);
         continue;
       }
+
+      // Con tallas/colores hay que elegir una de las suyas y que alcance la
+      // existencia en el almacén de la tienda (la venta se descuenta de ahí
+      // al confirmar el pago).
+      const { data: combinaciones } = await supabaseAdmin
+        .from("producto_combinaciones")
+        .select("id, talla, color")
+        .eq("id_producto", producto.id)
+        .eq("activo", true);
+      const idCombinacion = item.idCombinacion ?? null;
+      let descripcion: string | undefined;
+      if (combinaciones && combinaciones.length > 0) {
+        const combinacion = combinaciones.find((c) => c.id === idCombinacion);
+        if (!combinacion) {
+          fallidas.push(`producto:${item.idProducto}:${idCombinacion ?? ""}`);
+          continue;
+        }
+        const pedidas = (pedidasPorCombinacion.get(combinacion.id) ?? 0) + cantidad;
+        pedidasPorCombinacion.set(combinacion.id, pedidas);
+        const { data: fila } = await supabaseAdmin
+          .from("stock")
+          .select("stock")
+          .eq("id_almacen", ID_ALMACEN)
+          .eq("id_combinacion", combinacion.id)
+          .maybeSingle();
+        if (Number(fila?.stock ?? 0) < pedidas) {
+          fallidas.push(`producto:${item.idProducto}:${combinacion.id}`);
+          continue;
+        }
+        descripcion = [producto.nombre, combinacion.talla, combinacion.color]
+          .filter(Boolean)
+          .join(" · ");
+      } else if (idCombinacion) {
+        fallidas.push(`producto:${item.idProducto}:${idCombinacion}`);
+        continue;
+      }
+
       lineas.push({
         idProducto: producto.id,
         nombre: producto.nombre,
         cantidad,
         precioVenta: producto.precio_venta,
         precioCompra: producto.precio_compra,
+        idCombinacion: idCombinacion ?? undefined,
+        descripcion,
       });
     }
   }
@@ -389,9 +437,11 @@ Deno.serve(async (req) => {
           id_orden_externa: idOrdenExterna,
           id_producto: l.idProducto,
           id_almacen: ID_ALMACEN,
+          id_combinacion: l.idCombinacion ?? null,
           cantidad: l.cantidad,
           precio_venta: l.precioVenta,
           precio_compra: l.precioCompra,
+          descripcion: l.descripcion ?? null,
         }))
       );
     if (errorItems) {
@@ -418,7 +468,7 @@ Deno.serve(async (req) => {
     body: JSON.stringify({
       items: [
         ...lineas.map((l) => ({
-          title: l.nombre,
+          title: l.descripcion ?? l.nombre,
           quantity: l.cantidad,
           unit_price: l.precioVenta,
           currency_id: MONEDA,

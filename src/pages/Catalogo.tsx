@@ -85,6 +85,12 @@ function filtrosActivos(
     });
   }
   if (f.talla) chips.push({ texto: `Talla ${f.talla}`, quitar: { talla: null } });
+  f.colores.forEach((c) =>
+    chips.push({
+      texto: facetas?.colores.find((x) => x.id === c)?.nombre ?? c,
+      quitar: { colores: f.colores.filter((x) => x !== c) },
+    })
+  );
   if (f.enOferta) chips.push({ texto: "En oferta", quitar: { enOferta: false } });
   if (f.soloDisponibles)
     chips.push({ texto: "Solo disponibles", quitar: { soloDisponibles: false } });

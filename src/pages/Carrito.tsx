@@ -5,7 +5,7 @@ import {
   useTotalCarrito,
 } from "../store/CarritoStore";
 import { useCostoEnvioQuery } from "../tanstack/CatalogoStack";
-import { claveCarritoItem } from "../types/dominio";
+import { claveCarritoItem, textoCombinacion } from "../types/dominio";
 import { v } from "../styles/variables";
 
 export function Carrito() {
@@ -53,6 +53,9 @@ export function Carrito() {
                     {item.pureza ? ` (${item.pureza})` : ""} — pieza única
                   </span>
                 )}
+                {item.tipo === "stock" && textoCombinacion(item) && (
+                  <span className="meta">{textoCombinacion(item)}</span>
+                )}
                 <span className="precio">
                   $ {item.precioVenta.toLocaleString()}
                 </span>
@@ -65,7 +68,7 @@ export function Carrito() {
                   value={item.cantidad}
                   onChange={(e) =>
                     actualizarCantidad(
-                      item.idProducto,
+                      clave,
                       Math.max(1, Number(e.target.value) || 1)
                     )
                   }

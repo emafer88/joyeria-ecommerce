@@ -6,6 +6,7 @@ import type {
   AtributoProducto,
   Banner,
   CategoriaCatalogo,
+  CombinacionProducto,
   FacetaAtributo,
   FiltrosCatalogo,
   FiltrosTienda,
@@ -110,6 +111,8 @@ interface RespuestaCatalogo {
     etiquetas: OpcionFaceta[];
     materiales: { valor: string; nombre: string; n: number }[];
     atributos: FacetaAtributo[];
+    tallas?: { valor: string; n: number }[];
+    colores?: { valor: string; nombre: string; hex: string | null; n: number }[];
     en_oferta: number;
     precio: { min: number | null; max: number | null };
   };
@@ -129,6 +132,7 @@ export async function BuscarCatalogo(
       atributos: filtros.atributos,
       buscador: filtros.buscador,
       talla: filtros.talla,
+      colores: filtros.colores,
       precio_min: filtros.precioMin,
       precio_max: filtros.precioMax,
       peso_min: filtros.pesoMin,
@@ -176,6 +180,13 @@ export async function BuscarCatalogo(
         n: m.n,
       })),
       atributos: r.facetas.atributos ?? [],
+      tallas: r.facetas.tallas ?? [],
+      colores: (r.facetas.colores ?? []).map((c) => ({
+        id: c.valor,
+        nombre: c.nombre ?? c.valor,
+        hex: c.hex,
+        n: c.n,
+      })),
       enOferta: r.facetas.en_oferta,
       precio: r.facetas.precio,
     },
@@ -239,7 +250,30 @@ export async function MostrarImagenesProducto(
     _id_producto: idProducto,
   });
   if (error) throw new Error(error.message);
-  return (data ?? []).map((i) => ({ id: i.id, url: i.url, orden: i.orden }));
+  return (data ?? []).map((i) => ({
+    id: i.id,
+    url: i.url,
+    orden: i.orden,
+    color: i.color,
+  }));
+}
+
+/** Tallas y colores del producto con su existencia (vacío si no tiene). */
+export async function MostrarCombinacionesProducto(
+  idProducto: number
+): Promise<CombinacionProducto[]> {
+  const { data, error } = await supabase.rpc("ecommerce_producto_combinaciones", {
+    _id_producto: idProducto,
+  });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((c) => ({
+    id: c.id,
+    talla: c.talla,
+    color: c.color,
+    colorHex: c.color_hex,
+    orden: c.orden,
+    disponible: Number(c.disponible),
+  }));
 }
 
 export async function MostrarImagenesVariante(

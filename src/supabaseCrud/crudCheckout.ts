@@ -44,6 +44,10 @@ export interface ItemPedido {
   idProducto: number;
   /** null si es un producto normal; si tiene valor, es una pieza única de joyería (no recomprable tal cual). */
   idPieza: number | null;
+  /** Talla/color comprada (ropa y calzado), o null. */
+  idCombinacion?: number | null;
+  talla?: string | null;
+  color?: string | null;
 }
 
 export interface EstadoPedido {
@@ -64,6 +68,7 @@ function itemsParaEdgeFunction(items: CarritoItem[]) {
       : {
           tipo: "stock" as const,
           idProducto: item.idProducto,
+          idCombinacion: item.idCombinacion ?? null,
           cantidad: item.cantidad,
         }
   );

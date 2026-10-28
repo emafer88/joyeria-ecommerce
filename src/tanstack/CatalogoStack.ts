@@ -8,6 +8,7 @@ import {
   MostrarBanners,
   MostrarCategorias,
   MostrarCostoEnvio,
+  MostrarCombinacionesProducto,
   MostrarImagenesProducto,
   MostrarImagenesVariante,
   MostrarPiezasDisponibles,
@@ -83,6 +84,13 @@ export const useImagenesProductoQuery = (idProducto: number | undefined) =>
   useQuery({
     queryKey: [K_IMAGENES_PRODUCTO, idProducto],
     queryFn: () => MostrarImagenesProducto(idProducto as number),
+    enabled: idProducto !== undefined,
+  });
+
+export const useCombinacionesProductoQuery = (idProducto: number | undefined) =>
+  useQuery({
+    queryKey: [K_PRODUCTO_DETALLE, "combinaciones", idProducto],
+    queryFn: () => MostrarCombinacionesProducto(idProducto as number),
     enabled: idProducto !== undefined,
   });
 

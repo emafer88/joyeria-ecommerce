@@ -199,6 +199,49 @@ export function FiltrosCatalogo({
         </Seccion>
       ))}
 
+      {facetas && facetas.colores.length > 0 && (
+        <Seccion titulo="Color" abierta={filtros.colores.length > 0 || undefined}>
+          <div className="colores">
+            {facetas.colores.map((c) => {
+              const elegido = filtros.colores.includes(c.id);
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={elegido ? "color elegido" : "color"}
+                  aria-pressed={elegido}
+                  onClick={() => alternar("colores", c.id)}
+                >
+                  <i style={{ background: c.hex ?? "transparent" }} />
+                  <span>{c.nombre}</span>
+                </button>
+              );
+            })}
+          </div>
+        </Seccion>
+      )}
+
+      {facetas && facetas.tallas.length > 0 && (
+        <Seccion titulo="Talla" abierta={filtros.talla !== null || undefined}>
+          <div className="tallas">
+            {facetas.tallas.map((t) => {
+              const elegida = filtros.talla?.toLowerCase() === t.valor.toLowerCase();
+              return (
+                <button
+                  key={t.valor}
+                  type="button"
+                  className={elegida ? "elegida" : ""}
+                  aria-pressed={elegida}
+                  onClick={() => cambiar({ talla: elegida ? null : t.valor })}
+                >
+                  {t.valor}
+                </button>
+              );
+            })}
+          </div>
+        </Seccion>
+      )}
+
       <Seccion titulo="Precio">
         {rangos.map((r) => (
           <label key={r.texto} className="opcion">
@@ -273,7 +316,7 @@ export function FiltrosCatalogo({
         </Seccion>
       )}
 
-      {conTallas && (
+      {conTallas && !facetas?.tallas.length && (
         <Seccion titulo="Talla" abierta={filtros.talla !== null}>
           <input
             className="texto"
@@ -409,6 +452,65 @@ const Container = styled.div`
     color: ${v.colorPrincipal};
     font-size: 13px;
     cursor: pointer;
+  }
+
+  .tallas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+    gap: 6px;
+    button {
+      padding: 9px 0;
+      border-radius: 6px;
+      border: 1px solid ${v.borderSutil};
+      background: none;
+      color: ${v.colorTexto};
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      &:hover {
+        border-color: ${v.colorTexto};
+      }
+      &.elegida {
+        border-color: ${v.colorTexto};
+        box-shadow: inset 0 0 0 1px ${v.colorTexto};
+        font-weight: 700;
+      }
+    }
+  }
+
+  .colores {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px 6px;
+    .color {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      background: none;
+      border: none;
+      padding: 0;
+      color: ${v.colorTexto};
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      i {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 1px solid rgba(128, 128, 128, 0.5);
+      }
+      span {
+        text-align: center;
+        line-height: 1.2;
+      }
+      &.elegido i {
+        box-shadow: 0 0 0 2px var(--c-fondo-2), 0 0 0 4px ${v.colorTexto};
+      }
+      &.elegido span {
+        font-weight: 700;
+      }
+    }
   }
 
   .rango {

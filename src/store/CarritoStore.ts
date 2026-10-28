@@ -16,7 +16,8 @@ interface CarritoState {
     item: Omit<CarritoItemStock, "tipo" | "cantidad">,
     cantidad?: number
   ) => void;
-  actualizarCantidad: (idProducto: number, cantidad: number) => void;
+  /** Por clave del item (claveCarritoItem): con tallas, cada una es su fila. */
+  actualizarCantidad: (clave: string, cantidad: number) => void;
   quitarItem: (clave: string) => void;
   vaciar: () => void;
 }
@@ -35,10 +36,10 @@ export const useCarritoStore = create<CarritoState>()(
         set((s) => ({ items: [...s.items, nuevo] }));
       },
 
-      // Producto normal: si ya está en el carrito, suma cantidad en vez de
-      // duplicar la fila.
+      // Producto normal: si ya está en el carrito (misma talla/color), suma
+      // cantidad en vez de duplicar la fila.
       agregarProducto: (item, cantidad = 1) => {
-        const clave = `stock:${item.idProducto}`;
+        const clave = claveCarritoItem({ ...item, tipo: "stock", cantidad });
         const existente = get().items.find(
           (i) => claveCarritoItem(i) === clave
         ) as CarritoItemStock | undefined;
@@ -57,14 +58,14 @@ export const useCarritoStore = create<CarritoState>()(
         }
       },
 
-      actualizarCantidad: (idProducto, cantidad) => {
+      actualizarCantidad: (clave, cantidad) => {
         if (cantidad <= 0) {
-          get().quitarItem(`stock:${idProducto}`);
+          get().quitarItem(clave);
           return;
         }
         set((s) => ({
           items: s.items.map((i) =>
-            i.tipo === "stock" && i.idProducto === idProducto
+            i.tipo === "stock" && claveCarritoItem(i) === clave
               ? { ...i, cantidad }
               : i
           ),
