@@ -166,6 +166,40 @@ BEGIN
 END;
 $function$;
 
+-- Código de barras de una combinación: EAN-13 de uso interno (empieza con 2)
+-- a partir de un contador, con su dígito verificador. El contador nunca da
+-- dos veces el mismo número y además se salta los códigos que ya usa otra
+-- combinación, un producto o una pieza de joyería (capturados a mano).
+CREATE SEQUENCE IF NOT EXISTS public.producto_combinaciones_codigo_seq;
+REVOKE ALL ON SEQUENCE public.producto_combinaciones_codigo_seq FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.generar_codigo_barras_combinacion()
+RETURNS text
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_base   text;
+  v_suma   integer;
+  v_codigo text;
+BEGIN
+  LOOP
+    v_base := '2' || lpad(nextval('producto_combinaciones_codigo_seq')::text, 11, '0');
+    SELECT sum(substr(v_base, k, 1)::integer * CASE WHEN k % 2 = 0 THEN 3 ELSE 1 END)
+      INTO v_suma
+      FROM generate_series(1, 12) AS k;
+    v_codigo := v_base || ((10 - v_suma % 10) % 10)::text;
+    EXIT WHEN NOT EXISTS (SELECT 1 FROM producto_combinaciones WHERE codigo_barras = v_codigo)
+          AND NOT EXISTS (SELECT 1 FROM productos WHERE codigo_barras = v_codigo)
+          AND NOT EXISTS (SELECT 1 FROM piezas_inventario WHERE barcode = v_codigo);
+  END LOOP;
+  RETURN v_codigo;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.generar_codigo_barras_combinacion() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.generar_codigo_barras_combinacion() TO authenticated;
+
 -- Guarda las combinaciones de un producto desde su formulario y crea su fila
 -- de stock en el almacén elegido.
 --   _combinaciones: [{talla, color, color_hex, sku, codigo_barras,
@@ -176,6 +210,8 @@ $function$;
 -- * Combinación que ya no viene: se borra; si tiene historial se desactiva;
 --   si todavía tiene existencia, error.
 -- * Pasar a combinaciones exige que la existencia sin talla esté en 0.
+-- * Sin código de barras se le genera uno; uno capturado a mano no puede
+--   ser el de un producto o pieza (entre combinaciones lo cuida el índice).
 -- Corre con los permisos de quien llama: deciden las policies.
 CREATE OR REPLACE FUNCTION public.guardar_combinaciones_producto(
   _id_producto   bigint,
@@ -191,6 +227,8 @@ DECLARE
   v_id    bigint;
   v_talla text;
   v_color text;
+  v_codigo text;
+  v_usado  text;
   v_ids   bigint[] := '{}';
   v_stock numeric;
   r       record;
@@ -219,12 +257,26 @@ BEGIN
       CONTINUE;
     END IF;
 
+    v_codigo := NULLIF(btrim(c->>'codigo_barras'), '');
+    IF v_codigo IS NULL THEN
+      v_codigo := generar_codigo_barras_combinacion();
+    ELSE
+      SELECT nombre INTO v_usado FROM productos WHERE codigo_barras = v_codigo LIMIT 1;
+      IF v_usado IS NULL THEN
+        SELECT 'una pieza de joyería (' || sku || ')' INTO v_usado
+          FROM piezas_inventario WHERE barcode = v_codigo LIMIT 1;
+      END IF;
+      IF v_usado IS NOT NULL THEN
+        RAISE EXCEPTION 'El código de barras % ya lo usa %', v_codigo, v_usado;
+      END IF;
+    END IF;
+
     INSERT INTO producto_combinaciones
            (id_producto, talla, color, color_hex, sku, codigo_barras, orden, activo)
     VALUES (_id_producto, v_talla, v_color,
             NULLIF(btrim(c->>'color_hex'), ''),
             NULLIF(btrim(c->>'sku'), ''),
-            NULLIF(btrim(c->>'codigo_barras'), ''),
+            v_codigo,
             i, true)
     ON CONFLICT (id_producto, talla, color) DO UPDATE
        SET color_hex     = EXCLUDED.color_hex,
