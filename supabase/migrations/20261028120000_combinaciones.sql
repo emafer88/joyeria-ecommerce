@@ -13,6 +13,9 @@
 -- de la combinación. Un producto con combinaciones vendido sin elegir una
 -- falla (el POS y la tienda las piden a partir de C2/C3).
 --
+-- Admin: ropa_inventario alimenta la pestaña "Ropa y calzado" y
+-- mostrarproductos deja de listar los productos con combinaciones.
+--
 -- Pendiente para C3 (hoy no se puede vender una combinación): cancelar venta
 -- y cancelar apartado devuelven stock por producto, sin id_combinacion.
 
@@ -332,3 +335,77 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.guardar_combinaciones_producto(bigint, bigint, jsonb) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.guardar_combinaciones_producto(bigint, bigint, jsonb) TO authenticated;
+
+-- Pestaña "Ropa y calzado" del admin: una fila por combinación y almacén
+-- (sin fila de stock todavía: almacén NULL). Catálogo e inventario salen de
+-- aquí. Sin costos. Corre con los permisos de quien llama.
+CREATE OR REPLACE FUNCTION public.ropa_inventario(_id_empresa bigint)
+RETURNS TABLE (
+  id_producto    bigint,
+  producto       text,
+  precio_venta   numeric,
+  id_categoria   bigint,
+  categoria      text,
+  marca          text,
+  imagen_portada text,
+  creado         timestamptz,
+  id_combinacion bigint,
+  talla          text,
+  color          text,
+  color_hex      text,
+  codigo_barras  text,
+  orden          integer,
+  id_stock       bigint,
+  id_almacen     bigint,
+  almacen        text,
+  sucursal       text,
+  stock          numeric,
+  stock_minimo   numeric
+)
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT p.id, p.nombre, p.precio_venta, p.id_categoria, c.nombre, m.nombre,
+         (SELECT pi.url FROM producto_imagenes pi
+           WHERE pi.id_producto = p.id ORDER BY pi.orden LIMIT 1),
+         p.created_at,
+         pc.id, pc.talla, pc.color, pc.color_hex, pc.codigo_barras, pc.orden,
+         s.id, a.id, a.nombre, su.nombre, s.stock, s.stock_minimo
+    FROM productos p
+    JOIN producto_combinaciones pc ON pc.id_producto = p.id AND pc.activo
+    LEFT JOIN categorias c ON c.id = p.id_categoria
+    LEFT JOIN marca m ON m.id = p.id_marca
+    LEFT JOIN stock s ON s.id_combinacion = pc.id
+    LEFT JOIN almacen a ON a.id = s.id_almacen
+    LEFT JOIN sucursales su ON su.id = a.id_sucursal
+   WHERE p.id_empresa = _id_empresa
+     AND p.activo
+   ORDER BY p.nombre, pc.orden, a.id;
+$$;
+REVOKE ALL ON FUNCTION public.ropa_inventario(bigint) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.ropa_inventario(bigint) TO authenticated;
+
+-- Productos (catálogo general del admin) sin los de ropa y calzado: esos se
+-- administran en su pestaña. Mismo cuerpo que en 20261006120000_ocultar_costo.
+CREATE OR REPLACE FUNCTION public.mostrarproductos(_id_empresa integer)
+ RETURNS TABLE(id integer, nombre text, precio_venta numeric, precio_compra numeric, id_categoria integer, sevende_por text, codigo_barras text, codigo_interno text, id_empresa integer, maneja_inventarios boolean, maneja_multiprecios boolean, p_venta text, p_compra text, categoria text, imagen_portada text, destacado boolean, precio_oferta numeric, oferta_desde timestamp with time zone, oferta_hasta timestamp with time zone, id_marca bigint, medidas text, tallas text)
+ LANGUAGE sql
+AS $function$
+select p.id,
+ p.nombre, p.precio_venta, p.precio_compra, p.id_categoria, p.sevende_por,
+ p.codigo_barras, p.codigo_interno, p.id_empresa, p.maneja_inventarios,
+ p.maneja_multiprecios,
+ concat(e.simbolo_moneda, ' ', p.precio_venta) as p_venta,
+ CASE WHEN p.precio_compra IS NOT NULL
+      THEN concat(e.simbolo_moneda, ' ', p.precio_compra) END as p_compra,
+ c.nombre as categoria,
+ (select pi.url from producto_imagenes pi
+   where pi.id_producto = p.id order by pi.orden asc limit 1) as imagen_portada,
+ p.destacado, p.precio_oferta, p.oferta_desde, p.oferta_hasta,
+ p.id_marca, p.medidas, p.tallas
+  from productos_v as p inner join empresa as e on e.id = p.id_empresa
+  inner join categorias as c on c.id = p.id_categoria
+  where p.id_empresa = _id_empresa and p.activo
+    and not exists (select 1 from producto_combinaciones pc
+                     where pc.id_producto = p.id and pc.activo);
+$function$;
