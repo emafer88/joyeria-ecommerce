@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useEstadoPedidoQuery } from "../tanstack/CheckoutStack";
 import { useCarritoStore } from "../store/CarritoStore";
 import type { ItemPedido } from "../supabaseCrud/crudCheckout";
+import { textoCombinacion } from "../types/dominio";
 import { lineaDireccion } from "../utils/direccion";
 import { v } from "../styles/variables";
 
@@ -44,7 +45,15 @@ function recomprar(items: ItemPedido[]) {
 
   for (const item of recomprables) {
     agregarProducto(
-      { idProducto: item.idProducto, nombre: item.nombre, precioVenta: item.precioVenta, imagen: null },
+      {
+        idProducto: item.idProducto,
+        nombre: item.nombre,
+        precioVenta: item.precioVenta,
+        imagen: null,
+        idCombinacion: item.idCombinacion ?? null,
+        talla: item.talla ?? null,
+        color: item.color ?? null,
+      },
       item.cantidad
     );
   }
@@ -123,7 +132,9 @@ export function EstadoPedidoPagina() {
         {data.items.map((item, i) => (
           <li key={i}>
             <span>
-              {item.nombre} x{item.cantidad}
+              {item.nombre}
+              {textoCombinacion(item) ? ` (${textoCombinacion(item)})` : ""} x
+              {item.cantidad}
             </span>
             <span>$ {item.total.toLocaleString()}</span>
           </li>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styled from "styled-components";
 import { useParams, Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -7,6 +7,7 @@ import {
   useImagenesVarianteQuery,
   usePiezasDisponiblesQuery,
   useAtributosProductoQuery,
+  useCombinacionesProductoQuery,
   useProductoDetalleQuery,
   useVariantesDisponiblesQuery,
 } from "../tanstack/CatalogoStack";
@@ -21,6 +22,10 @@ export function ProductoDetalle() {
   const idProducto = id ? Number(id) : undefined;
   const [idVarianteElegida, setIdVarianteElegida] = useState<number>();
   const [cantidad, setCantidad] = useState(1);
+  // Ropa y calzado: color y talla elegidos ("" = el producto no tiene esa
+  // dimensión).
+  const [colorElegido, setColorElegido] = useState<string>();
+  const [tallaElegida, setTallaElegida] = useState<string>();
 
   // Filtros sobre las piezas de la variante elegida — solo por características
   // físicas (peso/medida/talla), no por precio: el precio puede variar dentro
@@ -49,6 +54,39 @@ export function ProductoDetalle() {
   );
   const { data: piezas, isLoading: piezasCargando } =
     usePiezasDisponiblesQuery(idVarianteElegida);
+  const { data: combinaciones = [] } = useCombinacionesProductoQuery(
+    producto && !producto.esJoyeria ? idProducto : undefined
+  );
+  const conCombinaciones = combinaciones.length > 0;
+  const colores = combinaciones.reduce<
+    { nombre: string; hex: string | null; disponible: number }[]
+  >((acc, c) => {
+    if (!c.color) return acc;
+    const x = acc.find((o) => o.nombre === c.color);
+    if (x) x.disponible += c.disponible;
+    else acc.push({ nombre: c.color, hex: c.colorHex, disponible: c.disponible });
+    return acc;
+  }, []);
+  const tallas = combinaciones.reduce<string[]>(
+    (acc, c) => (c.talla && !acc.includes(c.talla) ? [...acc, c.talla] : acc),
+    []
+  );
+  const colorActual = colores.length ? colorElegido : "";
+  const tallaActual = tallas.length ? tallaElegida : "";
+  const combinacionDe = (talla: string | undefined, color: string | undefined) =>
+    combinaciones.find((c) => c.talla === (talla ?? "") && c.color === (color ?? ""));
+  const combinacionElegida =
+    colorActual !== undefined && tallaActual !== undefined
+      ? combinacionDe(tallaActual, colorActual)
+      : undefined;
+
+  // Al cargar, el primer color con existencia queda elegido (como en las
+  // tiendas grandes); la talla la elige el cliente.
+  useEffect(() => {
+    if (colorElegido === undefined && colores.length) {
+      setColorElegido((colores.find((c) => c.disponible > 0) ?? colores[0]).nombre);
+    }
+  }, [colores.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const items = useCarritoStore((s) => s.items);
   const agregarPieza = useCarritoStore((s) => s.agregarPieza);
@@ -116,8 +154,21 @@ export function ProductoDetalle() {
   });
   // Al elegir un material, la galería pasa a ser la de esa variante; si la
   // variante no tiene imágenes cargadas se cae a las del producto.
+  // Con un color elegido, sus fotos; si ese color no tiene, las que no son
+  // de ningún color; si tampoco, todas.
+  const fotosDelColor = (imagenes ?? []).filter((i) => i.color === colorActual);
+  const fotosGenerales = (imagenes ?? []).filter((i) => !i.color);
+  const imagenesProducto = colorActual
+    ? fotosDelColor.length
+      ? fotosDelColor
+      : fotosGenerales.length
+        ? fotosGenerales
+        : imagenes
+    : imagenes;
   const galeria =
-    imagenesVariante && imagenesVariante.length > 0 ? imagenesVariante : imagenes;
+    imagenesVariante && imagenesVariante.length > 0
+      ? imagenesVariante
+      : imagenesProducto;
   const imagenPortada = galeria?.[0]?.url ?? null;
 
   if (isLoading) return <Container>Cargando...</Container>;
@@ -135,12 +186,16 @@ export function ProductoDetalle() {
     producto.precioVenta,
     producto.precioOferta
   );
-  const sinStock =
-    producto.totalDisponible !== null && producto.totalDisponible <= 0;
-  const stockBajo =
-    producto.totalDisponible !== null &&
-    producto.totalDisponible > 0 &&
-    producto.totalDisponible <= 5;
+  // Con tallas/colores la existencia es la de la combinación elegida.
+  const disponible = conCombinaciones
+    ? combinacionElegida?.disponible ?? null
+    : producto.totalDisponible;
+  const sinStock = conCombinaciones
+    ? (producto.totalDisponible !== null && producto.totalDisponible <= 0) ||
+      (combinacionElegida !== undefined && combinacionElegida.disponible <= 0)
+    : producto.totalDisponible !== null && producto.totalDisponible <= 0;
+  const stockBajo = disponible !== null && disponible > 0 && disponible <= 5;
+  const faltaElegir = conCombinaciones && !combinacionElegida;
 
   return (
     <Container>
@@ -179,7 +234,9 @@ export function ProductoDetalle() {
           )}
           {producto.descripcion && <p>{producto.descripcion}</p>}
 
-          {(producto.medidas || producto.tallas || atributos.length > 0) && (
+          {(producto.medidas ||
+            (producto.tallas && !conCombinaciones) ||
+            atributos.length > 0) && (
             <dl className="ficha">
               {atributos.map((a) => (
                 <div key={a.atributo}>
@@ -193,7 +250,7 @@ export function ProductoDetalle() {
                   <dd>{producto.medidas}</dd>
                 </div>
               )}
-              {producto.tallas && (
+              {producto.tallas && !conCombinaciones && (
                 <div>
                   <dt>Tallas</dt>
                   <dd>{producto.tallas}</dd>
@@ -226,14 +283,85 @@ export function ProductoDetalle() {
                 <span className="precio">Consultar precio</span>
               )}
 
-              {producto.totalDisponible !== null && (
+              {colores.length > 0 && (
+                <div className="selector">
+                  <span className="selector-titulo">
+                    Color: <strong>{colorActual}</strong>
+                  </span>
+                  <div className="muestras">
+                    {colores.map((c) => (
+                      <button
+                        key={c.nombre}
+                        type="button"
+                        title={c.nombre}
+                        aria-label={c.nombre}
+                        aria-pressed={c.nombre === colorActual}
+                        className={[
+                          "muestra",
+                          c.nombre === colorActual ? "elegida" : "",
+                          c.disponible <= 0 ? "agotada" : "",
+                        ].join(" ")}
+                        onClick={() => {
+                          setColorElegido(c.nombre);
+                          setCantidad(1);
+                        }}
+                      >
+                        <i style={{ background: c.hex ?? "transparent" }} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {tallas.length > 0 && (
+                <div className="selector">
+                  <span className="selector-titulo">
+                    {tallaActual ? (
+                      <>
+                        Talla: <strong>{tallaActual}</strong>
+                      </>
+                    ) : (
+                      "Elige tu talla"
+                    )}
+                  </span>
+                  <div className="tallas">
+                    {tallas.map((t) => {
+                      const c = combinacionDe(t, colorActual);
+                      const agotada = !c || c.disponible <= 0;
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          aria-pressed={t === tallaActual}
+                          className={[
+                            t === tallaActual ? "elegida" : "",
+                            agotada ? "agotada" : "",
+                          ].join(" ")}
+                          disabled={agotada}
+                          title={agotada ? "Agotada" : undefined}
+                          onClick={() => {
+                            setTallaElegida(t);
+                            setCantidad(1);
+                          }}
+                        >
+                          {t}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {(conCombinaciones
+                ? !!combinacionElegida
+                : producto.totalDisponible !== null) && (
                 <span
                   className={sinStock ? "stock stock--agotado" : "stock"}
                 >
                   {sinStock
                     ? "Agotado"
                     : stockBajo
-                      ? `Últimas ${producto.totalDisponible} unidades`
+                      ? `Últimas ${disponible} unidades`
                       : "Disponible"}
                 </span>
               )}
@@ -242,14 +370,18 @@ export function ProductoDetalle() {
                 <input
                   type="number"
                   min={1}
+                  max={conCombinaciones && disponible ? disponible : undefined}
                   value={cantidad}
-                  onChange={(e) =>
-                    setCantidad(Math.max(1, Number(e.target.value) || 1))
-                  }
+                  onChange={(e) => {
+                    const n = Math.max(1, Number(e.target.value) || 1);
+                    setCantidad(
+                      conCombinaciones && disponible ? Math.min(n, disponible) : n
+                    );
+                  }}
                 />
                 <button
                   type="button"
-                  disabled={producto.precioVenta <= 0 || sinStock}
+                  disabled={producto.precioVenta <= 0 || sinStock || faltaElegir}
                   onClick={() => {
                     agregarProducto(
                       {
@@ -257,13 +389,20 @@ export function ProductoDetalle() {
                         nombre: producto.nombre,
                         precioVenta: precioEfectivo,
                         imagen: imagenPortada,
+                        idCombinacion: combinacionElegida?.id ?? null,
+                        talla: combinacionElegida?.talla || null,
+                        color: combinacionElegida?.color || null,
                       },
                       cantidad
                     );
                     toast.success("Agregado al carrito");
                   }}
                 >
-                  {sinStock ? "Sin stock" : "Agregar al carrito"}
+                  {sinStock
+                    ? "Sin stock"
+                    : faltaElegir
+                      ? "Elige tu talla"
+                      : "Agregar al carrito"}
                 </button>
               </div>
             </>
@@ -826,6 +965,85 @@ const Container = styled.div`
         color: ${v.colorTextoSuave2};
         border-color: ${v.borderSutil};
         opacity: 1;
+      }
+    }
+  }
+
+  .selector {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .selector-titulo {
+    font-size: 14px;
+    color: ${v.colorTextoSuave};
+    strong {
+      color: ${v.colorTexto};
+    }
+  }
+  .muestras {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    .muestra {
+      width: 38px;
+      height: 38px;
+      padding: 3px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      background: none;
+      cursor: pointer;
+      position: relative;
+      i {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 1px solid rgba(128, 128, 128, 0.5);
+      }
+      &.elegida {
+        border-color: ${v.colorTexto};
+      }
+      &.agotada::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 4px;
+        bottom: 4px;
+        width: 2px;
+        background: ${v.colorTextoSuave};
+        transform: translateX(-50%) rotate(45deg);
+      }
+    }
+  }
+  .tallas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 8px;
+    max-width: 420px;
+    button {
+      padding: 12px 0;
+      border-radius: 8px;
+      border: 1px solid ${v.borderSutil};
+      background: rgba(var(--c-capa-rgb), 0.03);
+      color: ${v.colorTexto};
+      font-size: 15px;
+      font-family: inherit;
+      cursor: pointer;
+      &:hover:not(:disabled) {
+        border-color: ${v.colorTexto};
+      }
+      &.elegida {
+        border-color: ${v.colorTexto};
+        box-shadow: inset 0 0 0 1px ${v.colorTexto};
+        font-weight: 700;
+      }
+      &.agotada {
+        cursor: not-allowed;
+        color: ${v.colorTextoSuave2};
+        text-decoration: line-through;
+        background: transparent;
       }
     }
   }

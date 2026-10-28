@@ -72,6 +72,20 @@ export interface ImagenProducto {
   id: number;
   url: string;
   orden: number;
+  /** Foto de un color del producto (Negro), o null si es de todos. */
+  color?: string | null;
+}
+
+/** Una talla/color de un producto con su existencia (Fase C). */
+export interface CombinacionProducto {
+  id: number;
+  /** "" si el producto solo tiene colores. */
+  talla: string;
+  /** "" si el producto solo tiene tallas. */
+  color: string;
+  colorHex: string | null;
+  orden: number;
+  disponible: number;
 }
 
 export interface VarianteDisponible {
@@ -137,6 +151,8 @@ export interface FiltrosTienda {
   atributos: Record<string, number[]>;
   buscador: string | null;
   talla: string | null;
+  /** Colores elegidos, en minúsculas (negro, azul marino). */
+  colores: string[];
   precioMin: number | null;
   precioMax: number | null;
   pesoMin: number | null;
@@ -180,6 +196,10 @@ export interface FacetasCatalogo {
   etiquetas: OpcionFaceta[];
   materiales: OpcionFaceta<string>[];
   atributos: FacetaAtributo[];
+  /** Tallas con existencia (ropa y calzado), ya en orden XS…XXL / 22…30. */
+  tallas: { valor: string; n: number }[];
+  /** Colores con existencia; id = nombre en minúsculas. */
+  colores: (OpcionFaceta<string> & { hex: string | null })[];
   enOferta: number;
   precio: { min: number | null; max: number | null };
 }
@@ -223,13 +243,25 @@ export interface CarritoItemStock {
   precioVenta: number;
   cantidad: number;
   imagen: string | null;
+  /** Talla/color elegida (ropa y calzado); sin ella, el producto a secas. */
+  idCombinacion?: number | null;
+  talla?: string | null;
+  color?: string | null;
 }
 
 export type CarritoItem = CarritoItemPieza | CarritoItemStock;
 
 /** Clave única de un item del carrito (para agregar/quitar/actualizar). */
 export function claveCarritoItem(item: CarritoItem): string {
-  return item.tipo === "pieza" ? `pieza:${item.idPieza}` : `stock:${item.idProducto}`;
+  if (item.tipo === "pieza") return `pieza:${item.idPieza}`;
+  return item.idCombinacion
+    ? `stock:${item.idProducto}:${item.idCombinacion}`
+    : `stock:${item.idProducto}`;
+}
+
+/** "M · Negro" de un item con talla/color, o "" si no tiene. */
+export function textoCombinacion(c: { talla?: string | null; color?: string | null }): string {
+  return [c.talla, c.color].filter(Boolean).join(" · ");
 }
 
 // ----------------------------------------------------------------------------
