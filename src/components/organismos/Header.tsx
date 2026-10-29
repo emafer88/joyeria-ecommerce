@@ -46,7 +46,9 @@ export function Header() {
             <img src={logo.src} alt={contacto.nombre} />
           </span>
         )}
-        <span className="nombre">{contacto.nombre.toUpperCase()}</span>
+        {(!logo.propio || contacto.mostrarNombre) && (
+          <span className="nombre">{contacto.nombre.toUpperCase()}</span>
+        )}
       </Link>
 
       <nav className="enlaces">

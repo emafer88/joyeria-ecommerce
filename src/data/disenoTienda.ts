@@ -50,6 +50,8 @@ export interface Contacto {
   nombre: string;
   /** Imagen del logo (URL http(s)); vacío = sin logo propio. */
   logo: string;
+  /** Con logo propio, si el encabezado también muestra el nombre. */
+  mostrarNombre: boolean;
   descripcion: string;
   telefono: string;
   whatsapp: string;
@@ -263,6 +265,7 @@ const FABRICA_GENERAL: DisenoTienda = {
   contacto: {
     nombre: "Mi tienda",
     logo: "",
+    mostrarNombre: true,
     descripcion: "",
     telefono: "",
     whatsapp: "",
@@ -372,6 +375,8 @@ export function normalizarDiseno(guardado: unknown, giro?: string): DisenoTienda
   const contacto: Contacto = {
     nombre: texto(c.nombre, f.contacto.nombre),
     logo: url(c.logo, f.contacto.logo),
+    mostrarNombre:
+      typeof c.mostrarNombre === "boolean" ? c.mostrarNombre : f.contacto.mostrarNombre,
     descripcion: texto(c.descripcion, f.contacto.descripcion),
     telefono: texto(c.telefono, f.contacto.telefono),
     whatsapp:
