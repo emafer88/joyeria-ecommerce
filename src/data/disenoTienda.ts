@@ -2,6 +2,8 @@
 // Configuración → Diseño de la tienda). La base guarda solo lo que el dueño
 // cambió; acá están los valores de fábrica y `normalizarDiseno` completa y
 // limpia lo guardado, así que la tienda nunca depende de que venga completo.
+// Los textos de fábrica dependen del giro (`disenoFabrica`): solo una joyería
+// arranca hablando de piezas y joyas.
 // El editor del admin (proyecto-joyeria, src/utils/disenoTienda.jsx) repite
 // ids, paletas y textos por defecto: mantenerlos iguales.
 
@@ -46,6 +48,8 @@ export interface Promo {
 
 export interface Contacto {
   nombre: string;
+  /** Imagen del logo (URL http(s)); vacío = sin logo propio. */
+  logo: string;
   descripcion: string;
   telefono: string;
   whatsapp: string;
@@ -197,7 +201,7 @@ export const ICONOS_BENEFICIO: IconoBeneficio[] = [
   "certificado",
 ];
 
-export const DISENO_FABRICA: DisenoTienda = {
+const FABRICA_GENERAL: DisenoTienda = {
   paleta: "clasica",
   secciones: [
     { id: "banner", visible: true, titulo: "", subtitulo: "" },
@@ -206,7 +210,7 @@ export const DISENO_FABRICA: DisenoTienda = {
       id: "destacados",
       visible: true,
       titulo: "Productos destacados",
-      subtitulo: "Una selección de nuestras piezas favoritas",
+      subtitulo: "Una selección de nuestros favoritos",
     },
     {
       id: "ofertas",
@@ -218,20 +222,20 @@ export const DISENO_FABRICA: DisenoTienda = {
       id: "nuevos",
       visible: true,
       titulo: "Nuevos productos",
-      subtitulo: "Lo último que llegó a la joyería",
+      subtitulo: "Lo último que llegó a la tienda",
     },
     { id: "beneficios", visible: true, titulo: "", subtitulo: "" },
     {
       id: "redes",
       visible: true,
       titulo: "Síguenos en redes",
-      subtitulo: "Novedades, lanzamientos y detrás de escena de cada pieza.",
+      subtitulo: "Novedades, lanzamientos y promociones.",
     },
   ],
   promo: {
     etiqueta: "Promociones",
     titulo: "Consulta nuestras ofertas de temporada",
-    texto: "Piezas seleccionadas con condiciones especiales, todo el año.",
+    texto: "Productos seleccionados con condiciones especiales, todo el año.",
     boton: "Ver catálogo",
   },
   beneficios: [
@@ -242,8 +246,8 @@ export const DISENO_FABRICA: DisenoTienda = {
     },
     {
       icono: "garantia",
-      titulo: "Garantía en tus piezas",
-      texto: "Respaldo en materiales y fabricación.",
+      titulo: "Compra con garantía",
+      texto: "Respaldo en cada producto que compras.",
     },
     {
       icono: "devolucion",
@@ -257,17 +261,44 @@ export const DISENO_FABRICA: DisenoTienda = {
     },
   ],
   contacto: {
-    nombre: "Cubiks Jewelry",
-    descripcion: "Joyería en oro y plata, piezas pensadas para durar toda la vida.",
-    telefono: "+52 55 0000 0000",
-    whatsapp: "5215500000000",
-    email: "contacto@cubiksjewelry.com",
-    direccion: "Ciudad de México, México",
-    instagram: "https://instagram.com/cubiksjewelry",
-    facebook: "https://facebook.com/cubiksjewelry",
+    nombre: "Mi tienda",
+    logo: "",
+    descripcion: "",
+    telefono: "",
+    whatsapp: "",
+    email: "",
+    direccion: "",
+    instagram: "",
+    facebook: "",
     tiktok: "",
   },
 };
+
+// Joyería: mismos datos con los textos que hablan de piezas y joyas.
+const FABRICA_JOYERIA: DisenoTienda = {
+  ...FABRICA_GENERAL,
+  secciones: FABRICA_GENERAL.secciones.map((s) =>
+    s.id === "destacados"
+      ? { ...s, subtitulo: "Una selección de nuestras piezas favoritas" }
+      : s.id === "nuevos"
+        ? { ...s, subtitulo: "Lo último que llegó a la joyería" }
+        : s.id === "redes"
+          ? { ...s, subtitulo: "Novedades, lanzamientos y detrás de escena de cada pieza." }
+          : s
+  ),
+  promo: {
+    ...FABRICA_GENERAL.promo,
+    texto: "Piezas seleccionadas con condiciones especiales, todo el año.",
+  },
+  beneficios: FABRICA_GENERAL.beneficios.map((b) =>
+    b.icono === "garantia"
+      ? { ...b, titulo: "Garantía en tus piezas", texto: "Respaldo en materiales y fabricación." }
+      : b
+  ),
+};
+
+export const disenoFabrica = (giro?: string): DisenoTienda =>
+  giro === "joyeria" ? FABRICA_JOYERIA : FABRICA_GENERAL;
 
 const MAX_TEXTO = 200;
 
@@ -287,9 +318,9 @@ const obj = (valor: unknown): Record<string, unknown> =>
     ? (valor as Record<string, unknown>)
     : {};
 
-export function normalizarDiseno(guardado: unknown): DisenoTienda {
+export function normalizarDiseno(guardado: unknown, giro?: string): DisenoTienda {
   const g = obj(guardado);
-  const f = DISENO_FABRICA;
+  const f = disenoFabrica(giro);
 
   const paleta = PALETAS_TIENDA.some((p) => p.id === g.paleta)
     ? (g.paleta as string)
@@ -330,7 +361,7 @@ export function normalizarDiseno(guardado: unknown): DisenoTienda {
         return {
           icono: ICONOS_BENEFICIO.includes(b.icono as IconoBeneficio)
             ? (b.icono as IconoBeneficio)
-            : "diamante",
+            : "garantia",
           titulo: texto(b.titulo, ""),
           texto: texto(b.texto, ""),
         };
@@ -340,6 +371,7 @@ export function normalizarDiseno(guardado: unknown): DisenoTienda {
   const c = obj(g.contacto);
   const contacto: Contacto = {
     nombre: texto(c.nombre, f.contacto.nombre),
+    logo: url(c.logo, f.contacto.logo),
     descripcion: texto(c.descripcion, f.contacto.descripcion),
     telefono: texto(c.telefono, f.contacto.telefono),
     whatsapp:
