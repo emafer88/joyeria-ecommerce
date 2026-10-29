@@ -7,10 +7,9 @@ import { useCantidadCarrito } from "../../store/CarritoStore";
 import { useAuthStore, nombreVisible } from "../../store/AuthStore";
 import { urlFiltros } from "../../hooks/useFiltrosUrl";
 import { useFuncionesGiro } from "../../tanstack/LicenciaStack";
-import { useDiseno } from "../../tanstack/DisenoStack";
+import { useDiseno, useLogoTienda } from "../../tanstack/DisenoStack";
 import { CerrarSesion } from "../../supabaseCrud/crudAuth";
 import { v } from "../../styles/variables";
-import logo from "../../assets/logo.png";
 
 export function Header() {
   const cantidad = useCantidadCarrito();
@@ -21,6 +20,7 @@ export function Header() {
   const conPiezas = useFuncionesGiro().tiene("piezas");
   // El nombre de la tienda sale de Diseño de la tienda → Contacto.
   const { contacto } = useDiseno();
+  const logo = useLogoTienda();
   const [busqueda, setBusqueda] = useState("");
 
   const buscar = (e: FormEvent) => {
@@ -41,10 +41,14 @@ export function Header() {
   return (
     <Container>
       <Link className="marca" to="/">
-        <span className="isotipo">
-          <img src={logo} alt={contacto.nombre} />
-        </span>
-        <span className="nombre">{contacto.nombre.toUpperCase()}</span>
+        {logo.src && (
+          <span className={logo.propio ? "logo" : "isotipo"}>
+            <img src={logo.src} alt={contacto.nombre} />
+          </span>
+        )}
+        {(!logo.propio || contacto.mostrarNombre) && (
+          <span className="nombre">{contacto.nombre.toUpperCase()}</span>
+        )}
       </Link>
 
       <nav className="enlaces">
@@ -214,6 +218,17 @@ const Container = styled.header`
     }
   }
 
+  .logo {
+    height: 36px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    img {
+      height: 100%;
+      max-width: 140px;
+      object-fit: contain;
+    }
+  }
   .isotipo {
     width: 32px;
     height: 32px;

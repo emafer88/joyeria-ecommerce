@@ -1,9 +1,11 @@
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { GiGemPendant } from "react-icons/gi";
+import { FiTag } from "react-icons/fi";
 import { useCategoriasQuery } from "../../tanstack/CatalogoStack";
 import { urlFiltros } from "../../hooks/useFiltrosUrl";
 import { v } from "../../styles/variables";
+import { useGiro } from "../../tanstack/LicenciaStack";
 
 // `categorias.icono` en la base es "-" (sin ícono) o la URL pública de una
 // imagen subida desde el admin (ver crudCategorias.jsx → subirImagen). No es
@@ -13,6 +15,8 @@ const esUrlImagen = (icono: string) => /^https?:\/\//.test(icono);
 export function SeccionCategorias({ titulo }: { titulo: string }) {
   const { data: categorias, isLoading } = useCategoriasQuery();
   const navigate = useNavigate();
+  // Sin imagen: un dije en joyería, una etiqueta en los demás giros.
+  const IconoRespaldo = useGiro() === "joyeria" ? GiGemPendant : FiTag;
 
   if (isLoading || !categorias || categorias.length === 0) return null;
 
@@ -39,7 +43,7 @@ export function SeccionCategorias({ titulo }: { titulo: string }) {
               {c.icono && esUrlImagen(c.icono) ? (
                 <img src={c.icono} alt="" />
               ) : (
-                <GiGemPendant />
+                <IconoRespaldo />
               )}
             </span>
             <span className="nombre">{c.nombre}</span>

@@ -2,13 +2,13 @@ import styled from "styled-components";
 import { Link } from "react-router-dom";
 import { FiMapPin, FiPhone, FiMail, FiInstagram, FiFacebook } from "react-icons/fi";
 import { FaWhatsapp, FaTiktok } from "react-icons/fa";
-import { useDiseno } from "../../tanstack/DisenoStack";
+import { useDiseno, useLogoTienda } from "../../tanstack/DisenoStack";
 import { v } from "../../styles/variables";
-import logo from "../../assets/logo.png";
 
 export function Footer() {
   const anio = new Date().getFullYear();
   const { contacto } = useDiseno();
+  const logo = useLogoTienda();
   const linkWhatsapp = `https://wa.me/${contacto.whatsapp}`;
   const hayRedes = contacto.instagram || contacto.facebook || contacto.tiktok;
 
@@ -16,9 +16,13 @@ export function Footer() {
     <Container>
       <div className="columnas">
         <div className="col marca">
-          <div className="isotipo">
-            <img src={logo} alt={contacto.nombre} />
-          </div>
+          {logo.src ? (
+            <div className={logo.propio ? "logo" : "isotipo"}>
+              <img src={logo.src} alt={contacto.nombre} />
+            </div>
+          ) : (
+            <span className="nombre">{contacto.nombre}</span>
+          )}
           {contacto.descripcion && <p>{contacto.descripcion}</p>}
         </div>
 
@@ -140,6 +144,16 @@ const Container = styled.footer`
     }
   }
 
+  .logo img {
+    height: 48px;
+    max-width: 180px;
+    object-fit: contain;
+  }
+  .nombre {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
   .isotipo {
     width: 44px;
     height: 44px;

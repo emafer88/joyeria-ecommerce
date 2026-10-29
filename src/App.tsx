@@ -8,14 +8,20 @@ import { Footer } from "./components/organismos/Footer";
 import { useTiendaDisponibleQuery } from "./tanstack/LicenciaStack";
 import { TiendaNoDisponible } from "./pages/TiendaNoDisponible";
 import { TemaTienda } from "./styles/TemaTienda";
-import { useDiseno, useVistaPreviaDiseno } from "./tanstack/DisenoStack";
+import {
+  useDiseno,
+  useMarcaDocumento,
+  useVistaPreviaDiseno,
+} from "./tanstack/DisenoStack";
 import { paletaTienda } from "./data/disenoTienda";
 
 const queryClient = new QueryClient();
 
-// Paleta elegida en el admin (o el borrador, si es la vista previa).
+// Paleta elegida en el admin (o el borrador, si es la vista previa), y
+// nombre y logo en la pestaña del navegador.
 function Tema() {
   useVistaPreviaDiseno();
+  useMarcaDocumento();
   const { paleta } = useDiseno();
   return <TemaTienda $paleta={paletaTienda(paleta)} />;
 }

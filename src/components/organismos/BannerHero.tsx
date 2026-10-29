@@ -3,26 +3,59 @@ import styled from "styled-components";
 import { Link } from "react-router-dom";
 import { v } from "../../styles/variables";
 import type { Banner } from "../../types/dominio";
+import { useGiro } from "../../tanstack/LicenciaStack";
 
 // Slides de respaldo: se usan mientras no haya banners cargados desde el
-// admin (proyecto-joyeria → Productos → Banners), o si esa carga falla.
-const SLIDES_RESPALDO = [
+// admin (proyecto-joyeria → Configuración → Diseño de la tienda → Banners), o
+// si esa carga falla. Una joyería habla de piezas; los demás giros, de
+// productos.
+const FONDOS = [
+  "linear-gradient(135deg, rgba(var(--c-secundario-rgb), 0.28) 0%, var(--c-fondo-2) 70%)",
+  "linear-gradient(135deg, rgba(var(--c-principal-rgb), 0.2) 0%, var(--c-fondo-2) 70%)",
+  "linear-gradient(135deg, rgba(var(--c-secundario-rgb), 0.18) 0%, var(--c-fondo-1) 30%, var(--c-fondo-2) 70%)",
+];
+
+const SLIDES_GENERAL = [
   {
-    fondo: "linear-gradient(135deg, rgba(var(--c-secundario-rgb), 0.28) 0%, var(--c-fondo-2) 70%)",
-    etiqueta: "Colección Cubiks",
+    fondo: FONDOS[0],
+    etiqueta: "Bienvenido",
+    titulo: "Descubre nuestro catálogo",
+    texto: "Encuentra lo que buscas y recíbelo en casa.",
+    link: "/catalogo",
+  },
+  {
+    fondo: FONDOS[1],
+    etiqueta: "Envíos a todo México",
+    titulo: "Recibe tu pedido en la puerta de tu casa",
+    texto: "Empaque seguro y seguimiento en cada pedido.",
+    link: "/catalogo",
+  },
+  {
+    fondo: FONDOS[2],
+    etiqueta: "Compra segura",
+    titulo: "Paga con total confianza",
+    texto: "Checkout protegido en cada compra.",
+    link: "/catalogo",
+  },
+];
+
+const SLIDES_JOYERIA = [
+  {
+    fondo: FONDOS[0],
+    etiqueta: "Nueva colección",
     titulo: "Piezas únicas en oro y plata",
     texto: "Diseños atemporales, hechos para durar toda la vida.",
     link: "/catalogo",
   },
   {
-    fondo: "linear-gradient(135deg, rgba(var(--c-principal-rgb), 0.2) 0%, var(--c-fondo-2) 70%)",
+    fondo: FONDOS[1],
     etiqueta: "Envíos a todo México",
     titulo: "Recibe tu joya en la puerta de tu casa",
     texto: "Empaque seguro y seguimiento en cada pedido.",
     link: "/catalogo",
   },
   {
-    fondo: "linear-gradient(135deg, rgba(var(--c-secundario-rgb), 0.18) 0%, var(--c-fondo-1) 30%, var(--c-fondo-2) 70%)",
+    fondo: FONDOS[2],
     etiqueta: "Compra segura",
     titulo: "Paga con total confianza",
     texto: "Checkout protegido y garantía en todas nuestras piezas.",
@@ -42,8 +75,10 @@ interface Slide {
 
 const INTERVALO_MS = 5500;
 
-function aSlides(banners: Banner[] | undefined): Slide[] {
-  if (!banners || banners.length === 0) return SLIDES_RESPALDO;
+function aSlides(banners: Banner[] | undefined, giro: string | undefined): Slide[] {
+  if (!banners || banners.length === 0) {
+    return giro === "joyeria" ? SLIDES_JOYERIA : SLIDES_GENERAL;
+  }
   return banners.map((b) => ({
     fondo: `linear-gradient(0deg, rgba(0,0,0,.55), rgba(0,0,0,.25)), url(${b.imagenUrl}) center / cover`,
     sobreImagen: true,
@@ -58,7 +93,8 @@ interface Props {
 }
 
 export function BannerHero({ banners }: Props) {
-  const slides = aSlides(banners);
+  const giro = useGiro();
+  const slides = aSlides(banners, giro);
   const [indice, setIndice] = useState(0);
   const [pausado, setPausado] = useState(false);
 
