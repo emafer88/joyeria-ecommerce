@@ -78,7 +78,7 @@ export function useMarcaDocumento() {
 
 const ORIGENES_ADMIN = (
   import.meta.env.VITE_ADMIN_ORIGENES ??
-  "https://cubiks-pos.fer-ema-777.workers.dev,http://localhost:5173,http://localhost:5181"
+  "https://pos.cubiks.mx,https://cubiks-pos.fer-ema-777.workers.dev,http://localhost:5173,http://localhost:5181"
 )
   .split(",")
   .map((o) => o.trim())
